@@ -73,7 +73,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'VirtualCurruncy.wsgi.application'
-ASGI_APPLICATION = 'VirtualCurruncy.wsgi.application'
+ASGI_APPLICATION = 'VirtualCurruncy.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
