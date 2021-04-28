@@ -38,6 +38,7 @@ class Investment(models.Model):
         InvestmentOrders.objects.create(asset=self.asset, price=purchased_price,
                                         owner=self.owner, is_completed=True,
                                         investment=self)
+
     @transaction.atomic
     def remove(self, quantity, purchased_price):
         total_quantity_purchased = self.purchased_quantity - quantity
@@ -70,25 +71,27 @@ class InvestmentOrders(models.Model):
     owner = models.ForeignKey('user.User', on_delete=models.CASCADE)
     is_completed = models.BooleanField()
     investment = models.ForeignKey('investment.Investment', null=True, on_delete=models.RESTRICT)
-# class MarketListing(models.Model):
-#     POST_TYPE_CHOICES = {
-#         'BUY': 'BUY',
-#         'SELL': 'SELL'
-#     }
-#     post_type = models.CharField(choices=POST_TYPE_CHOICES)
-#     assets_to_trade = models.ManyToManyField('investment.Assets', related_name='assets_to_trade')
-#     accepted_coins = models.ManyToManyField('investment.Assets', related_name='accepted_coins')
-#     traded_coins = models.FloatField(default=0)
-#     remaining_coins = models.FloatField(default=0)
-#     partial_binding = models.BooleanField(default=False)
-#     accepts_coin_trading = models.BooleanField(default=False)
-#     accepts_money_transaction = models.BooleanField(default=False)
-#     has_stop_condition = models.BooleanField(default=False)
-#     expiry = models.DateTimeField()
-#     has_stop_loss_range = models.BooleanField(default=False)
-#     stop_loss_high = models.FloatField()
-#     stop_loss_low = models.FloatField()
-#
+
+
+class MarketListing(models.Model):
+    POST_TYPE_CHOICES = [
+        ('BUY', 'BUY'),
+        ('SELL', 'SELL'),
+    ]
+    post_type = models.CharField(choices=POST_TYPE_CHOICES, max_length=10)
+    assets_to_trade = models.ManyToManyField('investment.Asset', related_name='assets_to_trade')
+    accepted_coins = models.ManyToManyField('investment.Asset', related_name='accepted_coins')
+    traded_coins = models.FloatField(default=0)
+    remaining_coins = models.FloatField(default=0)
+    partial_binding = models.BooleanField(default=False)
+    accepts_coin_trading = models.BooleanField(default=False)
+    accepts_money_transaction = models.BooleanField(default=False)
+    has_stop_condition = models.BooleanField(default=False)
+    expiry = models.DateTimeField()
+    has_stop_loss_range = models.BooleanField(default=False)
+    stop_loss_high = models.FloatField()
+    stop_loss_low = models.FloatField()
+    posted_at = models.DateTimeField(auto_now_add=True)
 #
 # class CoinTransaction(models.Model):
 #     TRADE_TYPE_CHOICES = (

@@ -1,10 +1,11 @@
 from django.db.models.lookups import In
 from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
-from .models import Wallet, Asset, Investment
+from .models import Wallet, Asset, Investment, MarketListing
 from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
-from .serializers import WalletSerializers, AssetsSerializer, InvestmentSerializer, InvestmentBuySellSerializer
+from .serializers import WalletSerializers, AssetsSerializer, InvestmentSerializer, \
+    InvestmentBuySellSerializer, MarketListingSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, SAFE_METHODS, IsAuthenticated, IsAdminUser
@@ -70,8 +71,11 @@ class InvestmentViewSet(
         return Response(InvestmentSerializer(investment).data)
 
 
+class MarketListingViewSet(ModelViewSet):
+    queryset = MarketListing.objects.all()
+    serializer_class = MarketListingSerializer
 
-
-
-
-
+    def get_serializer_context(self):
+        context = super(MarketListingViewSet, self).get_serializer_context()
+        context.update({"request": self.request})
+        return context
