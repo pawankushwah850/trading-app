@@ -1,5 +1,7 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.utils import timezone
+
 from user.constants.languages import SUPPORTED_LANGUAGES
 
 
@@ -39,3 +41,13 @@ class Notification(models.Model):
     category = models.CharField(max_length=2, )  # todo choice field
     is_ack = models.BooleanField(default=False)
     user = models.ForeignKey('user.User', on_delete=models.CASCADE)
+
+
+class ForgetPasswordToken(models.Model):
+    user = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    expire_at = models.DateTimeField()
+    token = models.CharField(max_length=10)
+
+    @property
+    def is_expired(self):
+        return self.expire_at >= timezone.now()

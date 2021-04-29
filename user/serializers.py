@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from user.models import User, Referral
-from django.contrib.auth.hashers import make_password
+
+from user.models import User, Referral, ForgetPasswordToken
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,8 +27,24 @@ class UserSerializer(serializers.ModelSerializer):
         except KeyError:
             pass
         user = super().create(validated_data)
-        user.password = make_password(validated_data.get('password', '1234'))
+        user.set_password(validated_data['password'])
+        user.save()
         if referred_by:
             Referral.objects.create(referred_by=referred_by,
                                     referred_to=user)
         return user
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=10)
+    new_password = serializers.CharField(max_length=20)
+
+    def validate_token(self, token):
+        try:
+            token = ForgetPasswordToken.objects.get(token=token)
+            if token.is_expired:
+                raise serializers.ValidationError('Invalid Token.')
+            else:
+                return token
+        except ForgetPasswordToken.DoesNotExist:
+            raise serializers.ValidationError('Invalid Token.')
