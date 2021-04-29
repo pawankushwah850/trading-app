@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from user.models import User, Referral
-
+from django.contrib.auth.hashers import make_password
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
         except KeyError:
             pass
         user = super().create(validated_data)
+        user.password = make_password(validated_data.get('password', '1234'))
         if referred_by:
             Referral.objects.create(referred_by=referred_by,
                                     referred_to=user)
