@@ -13,6 +13,9 @@ class Asset(models.Model):
     price = models.FloatField()
     is_public = models.BooleanField(default=True)
 
+    def __unicode__(self):
+        return '%d: %s' % (self.name, self.price)
+
     @property
     def live_price(self):
         #         todo read from live stream probably
@@ -92,7 +95,9 @@ class MarketListing(models.Model):
     stop_loss_high = models.FloatField()
     stop_loss_low = models.FloatField()
     posted_at = models.DateTimeField(auto_now_add=True)
-#
+
+
+
 # class CoinTransaction(models.Model):
 #     TRADE_TYPE_CHOICES = (
 #         ('BUY', 'BUY',),

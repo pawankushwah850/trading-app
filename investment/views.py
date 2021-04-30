@@ -5,10 +5,11 @@ from .models import Wallet, Asset, Investment, MarketListing
 from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
 from .serializers import WalletSerializers, AssetsSerializer, InvestmentSerializer, \
-    InvestmentBuySellSerializer, MarketListingSerializer
+    InvestmentBuySellSerializer, MarketListingSerializer, MarketListingSerializerWrite
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, SAFE_METHODS, IsAuthenticated, IsAdminUser
+from rest_framework import status
 
 
 class WalletViewSet(
@@ -22,8 +23,8 @@ class WalletViewSet(
 
 
 class AssetsViewSet(ModelViewSet):
-    serializer_class = AssetsSerializer
     queryset = Asset.objects.all()
+    serializer_class = AssetsSerializer
 
     def get_permissions(self):
         if self.action in ['list', 'retrive']:
@@ -70,12 +71,17 @@ class InvestmentViewSet(
         investment.remove(ser.validated_data['asset_quantity'], asset.live_price)
         return Response(InvestmentSerializer(investment).data)
 
-
+@action(methods=['GET','POST','DELETE','PUT'],detail=True)
 class MarketListingViewSet(ModelViewSet):
-    queryset = MarketListing.objects.all()
-    serializer_class = MarketListingSerializer
 
+    queryset = MarketListing.objects.all()
+    permission_classes = (IsAuthenticated,)
     def get_serializer_context(self):
         context = super(MarketListingViewSet, self).get_serializer_context()
         context.update({"request": self.request})
         return context
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return MarketListingSerializer
+        return MarketListingSerializerWrite

@@ -11,7 +11,7 @@ class WalletSerializers(serializers.ModelSerializer):
 class AssetsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
-        fields = ['name', 'icon', 'price']
+        fields = ['pk', 'name', 'icon', 'price']
 
 
 class InvestmentSerializer(serializers.ModelSerializer):
@@ -34,21 +34,32 @@ class InvestmentBuySellSerializer(serializers.Serializer):
 
 
 class MarketListingSerializer(serializers.ModelSerializer):
+    accepted_coins = AssetsSerializer(many=True, read_only=True)
+    assets_to_trade = AssetsSerializer(many=True, read_only=True)
+
     class Meta:
         model = MarketListing
-        fields = ['post_type', 'assets_to_trade', 'accepted_coins', 'partial_binding', 'accepts_coin_trading',
-                  'accepts_money_transaction', 'has_stop_condition', 'expiry', 'stop_loss_high', 'stop_loss_low',]
+        fields = ('pk', 'post_type', 'assets_to_trade', 'accepted_coins', 'traded_coins', 'remaining_coins',
+                  'partial_binding', 'accepts_coin_trading', 'accepts_money_transaction', 'has_stop_condition',
+                  'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
 
-    def validate_assets_to_trade(self, attrs):
-        user = self.context.get("request").user
-        investments = Investment.objects.filter(owner=user)
-        investment_assets = []
-        for investment in investments:
-            investment_assets.append(investment.asset)
-        for asset in attrs:
-            if asset in investment_assets:
-                investment = investments.filter(asset=asset)
+class MarketListingSerializerWrite(serializers.ModelSerializer):
+    class Meta:
+        model = MarketListing
+        fields = ('pk', 'post_type', 'assets_to_trade', 'accepted_coins', 'traded_coins', 'remaining_coins',
+                  'partial_binding', 'accepts_coin_trading', 'accepts_money_transaction', 'has_stop_condition',
+                  'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
 
-            else:
-                raise serializers.ValidationError("Assets is not in your investment")
 
+    # def validate_assets_to_trade(self, attrs):
+    #     user = self.context.get("request").user
+    #     investments = Investment.objects.filter(owner=user)
+    #     investment_assets = []
+    #     for investment in investments:
+    #         investment_assets.append(investment.asset)
+    #     for asset in attrs:
+    #         if asset in investment_assets:
+    #             investment = investments.filter(asset=asset)
+    #
+    #         else:
+    #             raise serializers.ValidationError("Assets is not in your investment")
