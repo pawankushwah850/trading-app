@@ -20,9 +20,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'VirtualCurruncy.settings')
 # application = get_asgi_application()
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
-        URLRouter(
-            routing.websocket_urlpatterns
-        )
-    ),
+    # "websocket": AuthMiddlewareStack(
+    #     URLRouter(
+    #         routing.websocket_urlpatterns
+    #     )
+    # ),
 })
