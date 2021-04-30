@@ -27,4 +27,3 @@ urlpatterns = [
     path('auth/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 ]
 urlpatterns += router.urls
-

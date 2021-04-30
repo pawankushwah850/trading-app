@@ -97,6 +97,14 @@ class MarketListing(models.Model):
     posted_at = models.DateTimeField(auto_now_add=True)
 
 
+class Trade(models.Model):
+    tradeId = models.BigAutoField(primary_key=True)
+    purchaseItem = models.ManyToManyField('investment.Asset', related_name="purchaseTradeItem")
+    cash = models.FloatField(verbose_name="cash", null=False, blank=True, default=0)
+    createdDate = models.DateTimeField(auto_now_add=True, verbose_name="created date")
+
+    class Meta:
+        ordering = ['createdDate']
 
 # class CoinTransaction(models.Model):
 #     TRADE_TYPE_CHOICES = (

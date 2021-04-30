@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from investment.models import Wallet, Asset, Investment, InvestmentOrders, MarketListing
+from investment.models import Wallet, Asset, Investment, InvestmentOrders, MarketListing, \
+    Trade
 
 
 class WalletSerializers(serializers.ModelSerializer):
@@ -43,6 +44,7 @@ class MarketListingSerializer(serializers.ModelSerializer):
                   'partial_binding', 'accepts_coin_trading', 'accepts_money_transaction', 'has_stop_condition',
                   'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
 
+
 class MarketListingSerializerWrite(serializers.ModelSerializer):
     class Meta:
         model = MarketListing
@@ -51,15 +53,19 @@ class MarketListingSerializerWrite(serializers.ModelSerializer):
                   'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
 
 
-    # def validate_assets_to_trade(self, attrs):
-    #     user = self.context.get("request").user
-    #     investments = Investment.objects.filter(owner=user)
-    #     investment_assets = []
-    #     for investment in investments:
-    #         investment_assets.append(investment.asset)
-    #     for asset in attrs:
-    #         if asset in investment_assets:
-    #             investment = investments.filter(asset=asset)
-    #
-    #         else:
-    #             raise serializers.ValidationError("Assets is not in your investment")
+class TradeRead(serializers.ModelSerializer):
+    purchaseItem = AssetsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Trade
+        fields = (
+            'tradeId', 'purchaseItem', 'cash', 'createdDate',
+        )
+
+
+class TradeWrite(serializers.ModelSerializer):
+    class Meta:
+        model = Trade
+        fields = (
+            'tradeId', 'purchaseItem', 'cash', 'createdDate',
+        )

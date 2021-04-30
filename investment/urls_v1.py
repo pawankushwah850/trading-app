@@ -14,7 +14,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from rest_framework import routers
-
 from . import views
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -23,7 +22,10 @@ router.register(r'^assets', views.AssetsViewSet, basename='assets_view_set')
 router.register(r'^investments', views.InvestmentViewSet, basename='assets_view_set')
 router.register(r'^post-listing', views.MarketListingViewSet, basename='market_listing')
 router.register(r'^post-listing/<int:id>', views.MarketListingViewSet, basename='market_listing')
+router.register(r'^trade', views.TradeView, basename='TradeRead')
+router.register(r'^trade/<int:id>', views.TradeView, basename='TradeRead')
+
 urlpatterns = [
+    #
 ]
 urlpatterns += router.urls
-
