@@ -71,11 +71,12 @@ class InvestmentViewSet(
         investment.remove(ser.validated_data['asset_quantity'], asset.live_price)
         return Response(InvestmentSerializer(investment).data)
 
-@action(methods=['GET','POST','DELETE','PUT'],detail=True)
-class MarketListingViewSet(ModelViewSet):
 
+@action(methods=['GET', 'POST', 'DELETE', 'PUT'], detail=True)
+class MarketListingViewSet(ModelViewSet):
     queryset = MarketListing.objects.all()
     permission_classes = (IsAuthenticated,)
+
     def get_serializer_context(self):
         context = super(MarketListingViewSet, self).get_serializer_context()
         context.update({"request": self.request})
@@ -85,3 +86,11 @@ class MarketListingViewSet(ModelViewSet):
         if self.request.method == "GET":
             return MarketListingSerializer
         return MarketListingSerializerWrite
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response('successfully deleted', status=status.HTTP_200_OK)
+
+    def perform_destroy(self, instance):
+        instance.delete()
