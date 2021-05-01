@@ -6,12 +6,18 @@ class Wallet(models.Model):
     owner = models.OneToOneField('user.User', on_delete=models.CASCADE)
     balance = models.FloatField(default=0)
 
+    def __str__(self):
+        return self.owner.email
 
 class Asset(models.Model):
     name = models.CharField(max_length=244)
     icon = models.ImageField()
     price = models.FloatField()
     is_public = models.BooleanField(default=True)
+
+
+    def __str__(self):
+        return self.name
 
     def __unicode__(self):
         return '%d: %s' % (self.name, self.price)
@@ -29,6 +35,9 @@ class Investment(models.Model):
     purchased_quantity = models.FloatField(default=0)
     purchased_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.owner.email
 
     @transaction.atomic
     def add(self, quantity, purchased_price):
@@ -75,6 +84,8 @@ class InvestmentOrders(models.Model):
     is_completed = models.BooleanField()
     investment = models.ForeignKey('investment.Investment', null=True, on_delete=models.RESTRICT)
 
+    def __str__(self):
+        return self.owner.email
 
 class MarketListing(models.Model):
     POST_TYPE_CHOICES = [
