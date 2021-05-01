@@ -107,6 +107,8 @@ class MarketListing(models.Model):
     stop_loss_low = models.FloatField()
     posted_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.post_type
 
 class Trade(models.Model):
     tradeId = models.BigAutoField(primary_key=True)
@@ -116,6 +118,9 @@ class Trade(models.Model):
 
     class Meta:
         ordering = ['createdDate']
+
+    def __str__(self):
+        return self.tradeId
 
 # class CoinTransaction(models.Model):
 #     TRADE_TYPE_CHOICES = (
