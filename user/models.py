@@ -36,6 +36,8 @@ class Referral(models.Model):
     referred_to = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='referred_to')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.referred_to.email
 
 class Notification(models.Model):
     message = models.TextField()
@@ -44,6 +46,8 @@ class Notification(models.Model):
     is_ack = models.BooleanField(default=False)
     user = models.ForeignKey('user.User', on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.user.email
 
 class ForgetPasswordToken(models.Model):
     user = models.ForeignKey('user.User', on_delete=models.CASCADE)
