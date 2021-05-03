@@ -11,12 +11,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, SAFE_METHODS, IsAuthenticated, IsAdminUser
 from rest_framework import status
+from VirtualCoin.ExtraServices.Pagination import CustomPaginationInvestment
 
 
-class WalletViewSet(
-    mixins.ListModelMixin,
-    GenericViewSet):
+class WalletViewSet(mixins.ListModelMixin, GenericViewSet):
     serializer_class = WalletSerializers
+    pagination_class = CustomPaginationInvestment
 
     def get_queryset(self):
         wallet, created = Wallet.objects.get_or_create(owner=self.request.user)
@@ -26,6 +26,7 @@ class WalletViewSet(
 class AssetsViewSet(ModelViewSet):
     queryset = Asset.objects.all()
     serializer_class = AssetsSerializer
+    pagination_class = CustomPaginationInvestment
 
     def get_permissions(self):
         if self.action in ['list', 'retrive']:
@@ -35,11 +36,9 @@ class AssetsViewSet(ModelViewSet):
         return [permission() for permission in permission_classes]
 
 
-class InvestmentViewSet(
-    mixins.RetrieveModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet):
+class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
     serializer_class = InvestmentSerializer
+    pagination_class = CustomPaginationInvestment
 
     def get_serializer_context(self):
         context = super(InvestmentViewSet, self).get_serializer_context()
@@ -77,6 +76,7 @@ class InvestmentViewSet(
 class MarketListingViewSet(ModelViewSet):
     queryset = MarketListing.objects.all()
     permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPaginationInvestment
 
     def get_serializer_context(self):
         context = super(MarketListingViewSet, self).get_serializer_context()
@@ -105,6 +105,7 @@ class MarketListingViewSet(ModelViewSet):
 class TradeView(ModelViewSet):
     queryset = Trade.objects.all()
     permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPaginationInvestment
 
     def get_serializer_context(self):
         context = super(TradeView, self).get_serializer_context()

@@ -10,10 +10,13 @@ from rest_framework.viewsets import ModelViewSet
 from . import models as user_models
 from . import serializers
 
+from VirtualCoin.ExtraServices.Pagination import CustomPaginationUser
+
 
 class UserViewSet(ModelViewSet):
     serializer_class = serializers.UserSerializer
     queryset = user_models.User.objects.all()
+    pagination_class = CustomPaginationUser
 
     def get_permissions(self):
         if self.action in ['create', 'reset_password', 'forgot_password']:

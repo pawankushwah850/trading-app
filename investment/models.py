@@ -6,8 +6,12 @@ class Wallet(models.Model):
     owner = models.OneToOneField('user.User', on_delete=models.CASCADE)
     balance = models.FloatField(default=0)
 
+    class Meta:
+        verbose_name_plural = "Wallets"
+
     def __str__(self):
         return self.owner.email
+
 
 class Asset(models.Model):
     name = models.CharField(max_length=244)
@@ -83,6 +87,9 @@ class InvestmentOrders(models.Model):
     owner = models.ForeignKey('user.User', on_delete=models.CASCADE)
     is_completed = models.BooleanField()
     investment = models.ForeignKey('investment.Investment', null=True, on_delete=models.RESTRICT)
+
+    class Meta:
+        verbose_name_plural = "Investment Orders"
 
     def __str__(self):
         return self.owner.email

@@ -72,7 +72,7 @@ class CustomUserAdmin(UserAdmin):
     )
     readonly_fields = (
         'password', 'last_login', 'last_updated', 'is_superuser', 'email',
-        'phone_number', 'date_of_birth', 'date_joined', 'is_active',
+        'phone_number', 'date_of_birth', 'date_joined', 'is_active', 'name',
     )
 
     actions = (make_super_user, make_normal_user,)

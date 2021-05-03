@@ -168,6 +168,9 @@ STATIC_ROOT = BASE_DIR / 'static'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+EXTRA_SERVICES_URL = '/ExtraServices/'
+EXTRA_SERVICES_ROOT = BASE_DIR / 'ExtraServices'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
