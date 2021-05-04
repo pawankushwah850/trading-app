@@ -10,7 +10,7 @@ from rest_framework.viewsets import ModelViewSet
 from . import models as user_models
 from . import serializers
 
-from VirtualCoin.ExtraServices.Pagination import CustomPaginationUser
+from ExtraServices.Pagination import CustomPaginationUser
 
 
 class UserViewSet(ModelViewSet):
