@@ -1,6 +1,6 @@
 # consumers.py
 from django.contrib.auth import get_user_model
-from VirtualCoin.user.serializers import UserSerializer
+from user.serializers import UserSerializer
 
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.mixins import (
