@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Websocket testing tools</title>
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h4 class="center">
+                Websocket API testing tools
+            </h4>
+            <hr>
+        </div>
+        <div class="col s12">
+
+            <div class="row">
+                <div class="input-field col s3">
+                    <select id="method">
+                        <option value="list">List</option>
+                        <option value="retrieve">retrieve</option>
+                        <option value="update">update</option>
+                    </select>
+                    <label>Method Select</label>
+                </div>
+                <div class="input-field col s6">
+                    <input type="url" name="" id="url" placeholder="Enter a url"
+                           style="font-family: 'Courier New', Monospace">
+                </div>
+                <div class="input-field col s3">
+                    <input type="button" class="btn btn-large" name="" id="" value="GET" onclick="fetchData()">
+                </div>
+            </div>
+
+        </div>
+        <div class="col s12">
+            <h6>Output</h6>
+        </div>
+        <div class="col s12 #fafafa grey lighten-5" height="300">
+            <PRE>
+                <code id="output">
+
+                </code>
+            </PRE>
+        </div>
+    </div>
+</div>
+
+
+<!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var elems = document.querySelectorAll('select');
+        var instances = M.FormSelect.init(elems);
+    });
+</script>
+<script>
+
+    function fetchData() {
+        {#const url = "ws://loclahost:8000/test/ws/v1/simple"#}
+        const url = document.getElementById('url').value
+        console.log(url)
+        const method = document.getElementById('method').value
+        console.log(method)
+        const ws = new WebSocket(url);
+
+        ws.onmessage = function (e) {
+            console.log(e)
+            const data = JSON.parse(e.data).data
+            document.getElementById('output').innerHTML = JSON.stringify(data);
+        }
+
+        const action = window.setInterval(function () {
+            ws.send(JSON.stringify({
+                action: method,
+                request_id: new Date().getTime(),
+                {#pk: 2,#}
+            }));
+            window.clearInterval(action);
+        }, 2000)
+
+
+        ws.onerror = function (error) {
+            console.log(error)
+        }
+
+        ws.readyState = function (e) {
+            console.log("ready " + e)
+        }
+    }
+
+
+</script>
+</body>
+</html>

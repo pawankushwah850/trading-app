@@ -13,7 +13,7 @@ application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
         URLRouter([
-            path("test/", websocket_urlpatterns),
+            path("virtualcoin/", websocket_urlpatterns),
         ])
     ),
 })
