@@ -40,9 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework",
+    'channels',
     'user.apps.UserConfig',
     'investment.apps.InvestmentConfig',
-    'channels',
+    'channelsAPI.apps.ChannelsapiConfig',
+
 ]
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
@@ -101,16 +103,20 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-print(DATABASES)
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
-    },
-}
 
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+# }
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 AUTH_USER_MODEL = 'user.User'
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
