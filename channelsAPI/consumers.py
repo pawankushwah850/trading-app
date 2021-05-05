@@ -12,7 +12,7 @@ from djangochannelsrestframework.mixins import (
     UpdateModelMixin,
     DeleteModelMixin,
 )
-from djangochannelsrestframework.permissions import AllowAny
+from djangochannelsrestframework.permissions import AllowAny, IsAuthenticated
 
 
 # ws://localhost:8000/virtualcoin/ws/v1/users
@@ -25,7 +25,7 @@ class UserConsumer(ListModelMixin,
     User = get_user_model()
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
 
 # ws://localhost:8000/virtualcoin/ws/v1/wallet

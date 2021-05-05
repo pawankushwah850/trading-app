@@ -18,7 +18,7 @@ class Asset(models.Model):
     icon = models.ImageField()
     price = models.FloatField()
     is_public = models.BooleanField(default=True)
-
+    #to aviao coin
 
     def __str__(self):
         return self.name
