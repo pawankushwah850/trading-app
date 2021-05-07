@@ -1,12 +1,18 @@
 from rest_framework import serializers
-from investment.models import Wallet, Asset, Investment, InvestmentOrders, MarketListing
-    # Trade
+from investment.models import *
+
+from rest_framework.response import Response
+
+
+# Trade
 
 
 class WalletSerializers(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.email')
+
     class Meta:
         model = Wallet
-        fields = '__all__'
+        fields = ['owner', 'balance']
 
 
 class AssetsSerializer(serializers.ModelSerializer):
@@ -37,12 +43,14 @@ class InvestmentBuySellSerializer(serializers.Serializer):
 class MarketListingSerializer(serializers.ModelSerializer):
     accepted_coins = AssetsSerializer(many=True, read_only=True)
     assets_to_trade = AssetsSerializer(many=True, read_only=True)
+    postOwner = serializers.ReadOnlyField(source='postOwner.email')
 
     class Meta:
         model = MarketListing
-        fields = ('pk', 'post_type', 'assets_to_trade', 'accepted_coins', 'traded_coins', 'remaining_coins',
-                  'partial_binding', 'accepts_coin_trading', 'accepts_money_transaction', 'has_stop_condition',
-                  'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
+        fields = (
+            'pk', 'postOwner', 'post_type', 'assets_to_trade', 'accepted_coins', 'traded_coins', 'remaining_coins',
+            'partial_binding', 'accepts_coin_trading', 'accepts_money_transaction', 'has_stop_condition',
+            'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
 
 
 class MarketListingSerializerWrite(serializers.ModelSerializer):
@@ -52,20 +60,41 @@ class MarketListingSerializerWrite(serializers.ModelSerializer):
                   'partial_binding', 'accepts_coin_trading', 'accepts_money_transaction', 'has_stop_condition',
                   'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
 
+    '''
+    If “Is Stop Condition Set” boolean is set
+        to True, then expiry and Stop price low
+        are required.
+        If “Is Stop Price Range” boolean is set to
+        True, then “Stop Price Low” and “Stop
+        Price High” are required
+        Stop Price Low < Stop Price High
+    '''
 
-# class TradeRead(serializers.ModelSerializer):
-#     purchaseItem = AssetsSerializer(many=True, read_only=True)
-#
-#     class Meta:
-#         model = Trade
-#         fields = (
-#             'tradeId', 'purchaseItem', 'cash', 'createdDate',
-#         )
+    def validate(self, attrs):
 
-#
-# class TradeWrite(serializers.ModelSerializer):
-#     class Meta:
-#         model = Trade
-#         fields = (
-#             'tradeId', 'purchaseItem', 'cash', 'createdDate',
-#         )
+        expiry = attrs.get('expiry', "")
+        stopLowLoss = attrs.get('stop_loss_low', "")
+        stopHighLoss = attrs.get('stop_loss_high', "")
+
+        if attrs.get('has_stop_condition') == True:
+            if (expiry == "" or expiry == None or stopLowLoss == "" or stopLowLoss == None):
+                raise serializers.ValidationError('expiry and stop loss low are required! ')
+        elif attrs.get('has_stop_loss_range') == True:
+            if (stopLowLoss == "" or stopLowLoss == None or stopHighLoss == "" or stopHighLoss == None):
+                raise serializers.ValidationError('This field must be an even number.')
+            elif (stopLowLoss > stopHighLoss):
+                raise serializers.ValidationError("stop loss low must be less then stop low high")
+            else:
+                pass
+
+        return attrs
+
+
+class TradingSerializerRead(serializers.ModelSerializer):
+    TradeOwner = serializers.ReadOnlyField(source='TradeOwner.email')
+    postId = MarketListingSerializer(read_only=True)
+    purchasedItem = AssetsSerializer(read_only=True)
+
+    class Meta:
+        model = Trading
+        fields = ('TradeOwner', 'purchasedItem', 'quantity', 'cash', 'postId', 'tradingDate',)

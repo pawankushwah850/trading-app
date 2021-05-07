@@ -1,5 +1,7 @@
 from django.db import models
 from django.db import transaction
+from django.core.exceptions import ValidationError
+from functools import reduce
 
 
 class Wallet(models.Model):
@@ -103,9 +105,9 @@ class MarketListing(models.Model):
     ]
     post_type = models.CharField(choices=POST_TYPE_CHOICES, max_length=10)
     assets_to_trade = models.ManyToManyField('investment.Asset', related_name='assets_to_trade')
-    accepted_coins = models.ManyToManyField('investment.Asset', related_name='accepted_coins') # todo coin
-    traded_coins = models.FloatField(default=0) #todo trade coin
-    remaining_coins = models.FloatField(default=0) #todo remaining coin
+    accepted_coins = models.ManyToManyField('investment.Asset', related_name='accepted_coins')  # todo coin
+    traded_coins = models.FloatField(default=0)  # todo trade coin
+    remaining_coins = models.FloatField(default=0)  # todo remaining coin
     partial_binding = models.BooleanField(default=False)
     accepts_coin_trading = models.BooleanField(default=False)
     accepts_money_transaction = models.BooleanField(default=False)
@@ -120,22 +122,35 @@ class MarketListing(models.Model):
     def __str__(self):
         return self.post_type
 
+    def clean(self):
+        if self.has_stop_condition == True:
+            if ((self.expiry == "" or self.expiry == None) and (
+                    self.stop_loss_low == "" or self.stop_loss_low == None)):
+                raise ValidationError("expire And stop loss low value are required!")
+        elif self.has_stop_loss_range == True:
+            if ((self.stop_loss_high == "" or self.stop_loss_high == None) and (
+                    self.stop_loss_low == "" or self.stop_loss_low == None)):
+                raise ValidationError("stop_loss_high And stop loss low value are required!")
+            elif (self.stop_loss_low > self.stop_loss_high):
+                raise ValidationError("Stop low loss must be less then high!")
 
+    @property
+    def total_price(self):
+        price_list = list(self.assets_to_trade.all().values('price'))
+        total_sum = reduce(lambda x, y: x['price'] + y['price'], price_list)
+        return total_sum
 
 class Trading(models.Model):
     TradeOwner = models.ForeignKey('user.User', on_delete=models.CASCADE)
-    postId = models.ForeignKey('investment.MarketListing', on_delete=models.PROTECT, related_name="traddeId")
-    purchasedItem = models.ForeignKey('investment.Asset', on_delete=models.PROTECT,
+    postId = models.ForeignKey('investment.MarketListing', on_delete=models.CASCADE, related_name="tradeId")
+    purchasedItem = models.ForeignKey('investment.Asset', on_delete=models.CASCADE,
                                       related_name="purchasedItem")
     quantity = models.FloatField(verbose_name="quantity", default=0)
-    cash = models.FloatField(verbose_name="cash", blank=False, null=False, default=0)
+    cash = models.FloatField(verbose_name='cash', default=0)
     tradingDate = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.postId.post_type
-
-
-
 
 # class CoinTransaction(models.Model):
 #     TRADE_TYPE_CHOICES = (

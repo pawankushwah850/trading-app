@@ -7,7 +7,8 @@ from investment.models import *
 
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
-    readonly_fields = list_display = ['owner', 'balance']
+    readonly_fields = ['owner']
+    list_display = ['owner', 'balance']
     search_fields = ('owner__email',)
     list_filter = ('owner__email',)
     ordering = ('balance',)
