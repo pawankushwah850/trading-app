@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from investment.models import Wallet, Asset, Investment, InvestmentOrders, MarketListing, \
-    Trade
+from investment.models import Wallet, Asset, Investment, InvestmentOrders, MarketListing
+    # Trade
 
 
 class WalletSerializers(serializers.ModelSerializer):
@@ -53,19 +53,19 @@ class MarketListingSerializerWrite(serializers.ModelSerializer):
                   'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
 
 
-class TradeRead(serializers.ModelSerializer):
-    purchaseItem = AssetsSerializer(many=True, read_only=True)
+# class TradeRead(serializers.ModelSerializer):
+#     purchaseItem = AssetsSerializer(many=True, read_only=True)
+#
+#     class Meta:
+#         model = Trade
+#         fields = (
+#             'tradeId', 'purchaseItem', 'cash', 'createdDate',
+#         )
 
-    class Meta:
-        model = Trade
-        fields = (
-            'tradeId', 'purchaseItem', 'cash', 'createdDate',
-        )
-
-
-class TradeWrite(serializers.ModelSerializer):
-    class Meta:
-        model = Trade
-        fields = (
-            'tradeId', 'purchaseItem', 'cash', 'createdDate',
-        )
+#
+# class TradeWrite(serializers.ModelSerializer):
+#     class Meta:
+#         model = Trade
+#         fields = (
+#             'tradeId', 'purchaseItem', 'cash', 'createdDate',
+#         )

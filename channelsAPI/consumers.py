@@ -11,6 +11,7 @@ from djangochannelsrestframework.mixins import (
     CreateModelMixin,
     UpdateModelMixin,
     DeleteModelMixin,
+    PatchModelMixin,
 )
 from djangochannelsrestframework.permissions import AllowAny, IsAuthenticated
 
@@ -21,6 +22,7 @@ class UserConsumer(ListModelMixin,
                    CreateModelMixin,
                    UpdateModelMixin,
                    DeleteModelMixin,
+                   PatchModelMixin,
                    GenericAsyncAPIConsumer):
     User = get_user_model()
     queryset = User.objects.all()
@@ -33,6 +35,7 @@ class WalletConsumer(ListModelMixin,
                      RetrieveModelMixin,
                      CreateModelMixin,
                      UpdateModelMixin,
+                     PatchModelMixin,
                      DeleteModelMixin,
                      GenericAsyncAPIConsumer):
     queryset = Wallet.objects.all()
@@ -45,6 +48,7 @@ class AssetConsumer(ListModelMixin,
                     RetrieveModelMixin,
                     CreateModelMixin,
                     UpdateModelMixin,
+                    PatchModelMixin,
                     DeleteModelMixin,
                     GenericAsyncAPIConsumer):
     queryset = Asset.objects.all()

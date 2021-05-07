@@ -60,5 +60,7 @@ class TokenAuthMiddleware:
                 # Return the inner application directly and let it run everything else
         else:
             scope['user'] = await get_user(None)
-
-        return await self.app(scope, receive, send)
+        try:
+            return await self.app(scope, receive, send)
+        except Exception as error:
+            print(error)

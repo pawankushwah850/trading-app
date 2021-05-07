@@ -1,12 +1,13 @@
 from django.db.models.lookups import In
 from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
-from .models import Wallet, Asset, Investment, MarketListing, Trade
+from .models import Wallet, Asset, Investment, MarketListing
+# Trade
 from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
 from .serializers import WalletSerializers, AssetsSerializer, InvestmentSerializer, \
-    InvestmentBuySellSerializer, MarketListingSerializer, MarketListingSerializerWrite, \
-    TradeRead, TradeWrite
+    InvestmentBuySellSerializer, MarketListingSerializer, MarketListingSerializerWrite  # , \
+# TradeRead, TradeWrite
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, SAFE_METHODS, IsAuthenticated, IsAdminUser
@@ -72,7 +73,7 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
         return Response(InvestmentSerializer(investment).data)
 
 
-@action(methods=['GET', 'POST', 'DELETE', 'PUT'], detail=True)
+# @action(methods=['GET', 'POST', 'DELETE', 'PUT'], detail=True)
 class MarketListingViewSet(ModelViewSet):
     queryset = MarketListing.objects.all()
     permission_classes = (IsAuthenticated,)
@@ -100,28 +101,42 @@ class MarketListingViewSet(ModelViewSet):
         kwargs['partial'] = True
         return super().update(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        serializer.save(postOwner=self.request.user)
 
-@action(methods=['GET', 'POST', 'PUT', 'DELETE'], detail=True)
-class TradeView(ModelViewSet):
-    queryset = Trade.objects.all()
-    permission_classes = (IsAuthenticated,)
-    pagination_class = CustomPaginationInvestment
+    @action(detail=False, methods=['get'])
+    def sell(self, request):
+        data = MarketListing.objects.filter(post_type="SELL")
+        serializers = MarketListingSerializer(data, many=True)
+        return Response(serializers.data, status=status.HTTP_200_OK)
 
-    def get_serializer_context(self):
-        context = super(TradeView, self).get_serializer_context()
-        context.update({"request": self.request})
-        return context
+    @action(detail=False, methods=['get'])
+    def buy(self, request):
+        data = MarketListing.objects.filter(post_type="BUY")
+        serializers = MarketListingSerializer(data, many=True)
+        return Response(serializers.data, status=status.HTTP_200_OK)
 
-    def get_serializer_class(self):
-        if self.request.method == "GET":
-            return TradeRead
-        return TradeWrite
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response('successfully deleted', status=status.HTTP_200_OK)
-
-    def update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return super().update(request, *args, **kwargs)
+# @action(methods=['GET', 'POST', 'PUT', 'DELETE'], detail=True)
+# class TradeView(ModelViewSet):
+#     queryset = Trade.objects.all()
+#     permission_classes = (IsAuthenticated,)
+#     pagination_class = CustomPaginationInvestment
+#
+#     def get_serializer_context(self):
+#         context = super(TradeView, self).get_serializer_context()
+#         context.update({"request": self.request})
+#         return context
+#
+#     def get_serializer_class(self):
+#         if self.request.method == "GET":
+#             return TradeRead
+#         return TradeWrite
+#
+#     def destroy(self, request, *args, **kwargs):
+#         instance = self.get_object()
+#         self.perform_destroy(instance)
+#         return Response('successfully deleted', status=status.HTTP_200_OK)
+#
+#     def update(self, request, *args, **kwargs):
+#         kwargs['partial'] = True
+#         return super().update(request, *args, **kwargs)

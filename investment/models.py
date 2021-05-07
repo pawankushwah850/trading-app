@@ -18,7 +18,8 @@ class Asset(models.Model):
     icon = models.ImageField()
     price = models.FloatField()
     is_public = models.BooleanField(default=True)
-    #to aviao coin
+
+    # todo availabel coin and asset quantity
 
     def __str__(self):
         return self.name
@@ -94,6 +95,7 @@ class InvestmentOrders(models.Model):
     def __str__(self):
         return self.owner.email
 
+
 class MarketListing(models.Model):
     POST_TYPE_CHOICES = [
         ('BUY', 'BUY'),
@@ -101,9 +103,9 @@ class MarketListing(models.Model):
     ]
     post_type = models.CharField(choices=POST_TYPE_CHOICES, max_length=10)
     assets_to_trade = models.ManyToManyField('investment.Asset', related_name='assets_to_trade')
-    accepted_coins = models.ManyToManyField('investment.Asset', related_name='accepted_coins')
-    traded_coins = models.FloatField(default=0)
-    remaining_coins = models.FloatField(default=0)
+    accepted_coins = models.ManyToManyField('investment.Asset', related_name='accepted_coins') # todo coin
+    traded_coins = models.FloatField(default=0) #todo trade coin
+    remaining_coins = models.FloatField(default=0) #todo remaining coin
     partial_binding = models.BooleanField(default=False)
     accepts_coin_trading = models.BooleanField(default=False)
     accepts_money_transaction = models.BooleanField(default=False)
@@ -112,22 +114,28 @@ class MarketListing(models.Model):
     has_stop_loss_range = models.BooleanField(default=False)
     stop_loss_high = models.FloatField()
     stop_loss_low = models.FloatField()
+    postOwner = models.ForeignKey('user.User', on_delete=models.CASCADE)
     posted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.post_type
 
-class Trade(models.Model):
-    tradeId = models.BigAutoField(primary_key=True)
-    purchaseItem = models.ManyToManyField('investment.Asset', related_name="purchaseTradeItem")
-    cash = models.FloatField(verbose_name="cash", null=False, blank=True, default=0)
-    createdDate = models.DateTimeField(auto_now_add=True, verbose_name="created date")
 
-    class Meta:
-        ordering = ['createdDate']
+
+class Trading(models.Model):
+    TradeOwner = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    postId = models.ForeignKey('investment.MarketListing', on_delete=models.PROTECT, related_name="traddeId")
+    purchasedItem = models.ForeignKey('investment.Asset', on_delete=models.PROTECT,
+                                      related_name="purchasedItem")
+    quantity = models.FloatField(verbose_name="quantity", default=0)
+    cash = models.FloatField(verbose_name="cash", blank=False, null=False, default=0)
+    tradingDate = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.tradeId
+        return self.postId.post_type
+
+
+
 
 # class CoinTransaction(models.Model):
 #     TRADE_TYPE_CHOICES = (

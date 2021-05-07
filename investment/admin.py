@@ -1,17 +1,15 @@
 from django.contrib import admin
 from investment.models import *
 
-# Register your models here.
 
-IGNORE_FIELD = ['id']
+# Register your models here.
 
 
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
-    readonly_fields = list_display = sorted([f.name for f in Wallet._meta.fields \
-                                             if (f.name not in IGNORE_FIELD)])[::-1]
+    readonly_fields = list_display = ['owner', 'balance']
     search_fields = ('owner__email',)
-    list_filter = ('owner',)
+    list_filter = ('owner__email',)
     ordering = ('balance',)
 
     fieldsets = (
@@ -21,18 +19,13 @@ class WalletAdmin(admin.ModelAdmin):
     )
 
 
-IGNORE_FIELD.append('icon')
-
-
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    list_display = sorted([f.name for f in Asset._meta.fields \
-                           if (f.name not in IGNORE_FIELD)])[::-1]
+    list_display = ['name', 'price', 'is_public']
 
     search_fields = ('name',)
     list_filter = ('is_public',)
     ordering = ('price',)
-    readonly_fields = [f.name for f in Asset._meta.fields]
     fieldsets = (
         (
             ('Information'), {'fields': ('name', 'price', 'icon', 'is_public',)}
@@ -40,18 +33,14 @@ class AssetAdmin(admin.ModelAdmin):
     )
 
 
-IGNORE_FIELD.pop()
-
-
 @admin.register(Investment)
 class InvestmentAdmin(admin.ModelAdmin):
-    list_display = sorted([f.name for f in Investment._meta.fields \
-                           if (f.name not in IGNORE_FIELD)])[::-1]
+    list_display = ['owner', 'asset', 'asset', 'purchased_quantity', 'is_active', 'purchased_at']
 
     search_fields = ('owner__email', 'asset__name',)
     list_filter = ('purchased_at', 'is_active',)
     ordering = ('purchased_price', 'purchased_quantity',)
-    readonly_fields = [f.name for f in Investment._meta.fields]
+    readonly_fields = ['owner', 'purchased_at']
     fieldsets = (
         (
             ('User Information'), {'fields': ('owner', 'asset',)}
@@ -67,11 +56,10 @@ class InvestmentAdmin(admin.ModelAdmin):
 
 @admin.register(InvestmentOrders)
 class InvestmentOrdersAdmin(admin.ModelAdmin):
-    list_display = sorted([f.name for f in InvestmentOrders._meta.fields \
-                           if (f.name not in IGNORE_FIELD)])[::-1]
+    list_display = ['owner', 'asset', 'investment', 'price', 'is_completed', 'timestamp']
     search_fields = ('owner__email',)
     list_filter = ('is_completed',)
-    readonly_fields = [f.name for f in InvestmentOrders._meta.fields]
+    readonly_fields = ['pk', 'owner', 'asset', 'timestamp']
     ordering = ('is_completed', 'price',)
     fieldsets = (
         (
@@ -86,22 +74,16 @@ class InvestmentOrdersAdmin(admin.ModelAdmin):
     )
 
 
-IGNORE_FIELD.extend(['traded_coins', 'remaining_coins', 'partial_binding', 'accepts_coin_trading', \
-                     'accepts_money_transaction', 'has_stop_condition', 'expiry', 'stop_loss_low'
-                     ])
-
-
 @admin.register(MarketListing)
 class MarketListingAdmin(admin.ModelAdmin):
-    list_display = [f.name for f in MarketListing._meta.fields \
-                           if (f.name not in IGNORE_FIELD)]
+    list_display = ['postOwner', 'post_type', 'has_stop_condition', 'expiry']
 
     list_filter = ('post_type', 'accepts_coin_trading', 'assets_to_trade',)
-    readonly_fields = [f.name for f in MarketListing._meta.fields]
+    readonly_fields = ['pk', 'posted_at', ]
     ordering = ('expiry', 'stop_loss_high',)
     fieldsets = (
         (
-            ('Market information'), {'fields': ('post_type', 'assets_to_trade', \
+            ('Market information'), {'fields': ('postOwner', 'post_type', 'assets_to_trade', \
                                                 'partial_binding', 'accepts_money_transaction',)}
         ),
         (
@@ -119,9 +101,9 @@ class MarketListingAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Trade)
+@admin.register(Trading)
 class TradeAdmin(admin.ModelAdmin):
-    list_display = sorted([f.name for f in Trade._meta.fields])[::-1]
-    search_fields = ('tradeId',)
-    readonly_fields = [f.name for f in Trade._meta.fields]
-    ordering = ('createdDate',)
+    list_display = sorted([f.name for f in Trading._meta.fields])[::-1]
+    search_fields = ('postId',)
+    readonly_fields = ['pk']
+    ordering = ('tradingDate',)

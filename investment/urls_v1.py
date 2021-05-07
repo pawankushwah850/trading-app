@@ -22,8 +22,8 @@ router.register(r'^assets', views.AssetsViewSet, basename='assets_view_set')
 router.register(r'^investments', views.InvestmentViewSet, basename='assets_view_set')
 router.register(r'^post-listing', views.MarketListingViewSet, basename='market_listing')
 router.register(r'^post-listing/<int:id>', views.MarketListingViewSet, basename='market_listing')
-router.register(r'^trade', views.TradeView, basename='TradeRead')
-router.register(r'^trade/<int:id>', views.TradeView, basename='TradeRead')
+# router.register(r'^trade', views.TradeView, basename='TradeRead')
+# router.register(r'^trade/<int:id>', views.TradeView, basename='TradeRead')
 
 urlpatterns = [
     #
