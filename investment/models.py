@@ -104,7 +104,7 @@ class MarketListing(models.Model):
         ('SELL', 'SELL'),
     ]
     post_type = models.CharField(choices=POST_TYPE_CHOICES, max_length=10)
-    assets_to_trade = models.ManyToManyField('investment.Asset', related_name='assets_to_trade')
+    assets_to_trade = models.ForeignKey('investment.Asset', on_delete=models.CASCADE, related_name='assets_to_trade')
     accepted_coins = models.ManyToManyField('investment.Asset', related_name='accepted_coins')  # todo coin
     traded_coins = models.FloatField(default=0)  # todo trade coin
     remaining_coins = models.FloatField(default=0)  # todo remaining coin
@@ -136,21 +136,21 @@ class MarketListing(models.Model):
 
     @property
     def total_price(self):
-        price_list = list(self.assets_to_trade.all().values('price'))
-        total_sum = reduce(lambda x, y: x['price'] + y['price'], price_list)
-        return total_sum
+        price = self.assets_to_trade.price
+        return price
+
 
 class Trading(models.Model):
     TradeOwner = models.ForeignKey('user.User', on_delete=models.CASCADE)
     postId = models.ForeignKey('investment.MarketListing', on_delete=models.CASCADE, related_name="tradeId")
-    purchasedItem = models.ForeignKey('investment.Asset', on_delete=models.CASCADE,
-                                      related_name="purchasedItem")
     quantity = models.FloatField(verbose_name="quantity", default=0)
     cash = models.FloatField(verbose_name='cash', default=0)
     tradingDate = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.postId.post_type
+
+
 
 # class CoinTransaction(models.Model):
 #     TRADE_TYPE_CHOICES = (

@@ -102,26 +102,73 @@ class MarketListingViewSet(ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def sell(self, request):
-        data = MarketListing.objects.filter(post_type="SELL", postOwner=self.request.user)
+        data = MarketListing.objects.filter(post_type="SELL")
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def buy(self, request):
-        data = MarketListing.objects.filter(post_type="BUY", postOwner=self.request.user)
+        data = MarketListing.objects.filter(post_type="BUY")
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
 
 class TradingViewSet(ModelViewSet):
-    serializer_class = TradingSerializerRead
     permission_classes = (IsAuthenticated,)
 
+    def get_serializer_context(self):
+        context = super(TradingViewSet, self).get_serializer_context()
+        context.update({"request": self.request})
+        return context
+
     def get_queryset(self):
-        if self.action == 'list':
+        if self.request.method == "GET":
             return Trading.objects.filter(TradeOwner=self.request.user)
         return Trading.objects.all()
 
-    @action(methods=['post'], detail=False)
-    def buy(self, request, pk):
-        pass
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return TradingSerializerRead
+        else:
+            return TradingSerializerWrite
+
+    @action(methods=['POST'], detail=False)
+    def buy(self, request):
+
+        serializer = TradingSerializerBuy(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        id = serializer.data.get('postId')
+        cash = float(serializer.validated_data.get('cash'))
+        instance = MarketListing.objects.get(pk=id)
+        if instance.total_price > cash:
+            return Response(f'Cash is too low then assets price. Excepted {instance.total_price} ',
+                            status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+
+            walletInstance = Wallet.objects.get(owner=self.request.user.id)
+            if walletInstance.balance < cash:
+                return Response("Please recharge your wallet balance")
+            else:
+                walletInstance.balance -= cash
+                walletInstance.save()
+
+            walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
+            walletInstanceClient.balance += cash
+            walletInstanceClient.save()
+
+            instance.delete()
+
+            # todo why trading model not updating while trading
+            tradingInstance = Trading.objects.create(
+                postId=serializer.validated_data['postId'],
+                TradeOwner=self.request.user,
+                quantity=serializer.validated_data['quantity'],
+                cash=serializer.validated_data['cash'],
+            )
+            tradingInstance.save()
+
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+        return Response(serializer.error, status=status.HTTP_406_NOT_ACCEPTABLE)
+

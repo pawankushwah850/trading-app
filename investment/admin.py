@@ -104,7 +104,7 @@ class MarketListingAdmin(admin.ModelAdmin):
 
 @admin.register(Trading)
 class TradeAdmin(admin.ModelAdmin):
-    list_display = sorted([f.name for f in Trading._meta.fields])[::-1]
+    list_display = ['pk']
     search_fields = ('postId',)
     readonly_fields = ['pk']
     ordering = ('tradingDate',)
