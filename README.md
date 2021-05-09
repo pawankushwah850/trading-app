@@ -1,10 +1,10 @@
 <h1 align="center">VirtualCoin</h1>
-<p>
-VirtualCoin is web application of trading or asset market. Here clients buy and sell to assets. Assets means GOLD, SILVER, PLATINUM etc. 
-And Here we have create a rest api for that application.
+<pre>
+VirtualCoin is web application of trading or asset market. Here client buy or sell to assets. Assets means GOLD, SILVER, PLATINUM etc. 
+And Here we have to create rest api for that application.
 
 For more information of rest api. read this api
-</p>
+</pre>
 <h3>Build a git clone of this project. </h3>
 
 <h3>Ready your virtual env. </h3> <pre>pip install -r requirment.txt </pre>
