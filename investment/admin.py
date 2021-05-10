@@ -77,11 +77,11 @@ class InvestmentOrdersAdmin(admin.ModelAdmin):
 
 @admin.register(MarketListing)
 class MarketListingAdmin(admin.ModelAdmin):
-    list_display = ['postOwner', 'post_type', 'has_stop_condition', 'expiry']
+    list_display = ['pk', 'postOwner', 'post_type', 'is_trade', 'expiry']
 
-    list_filter = ('post_type', 'accepts_coin_trading', 'assets_to_trade',)
-    readonly_fields = ['pk', 'posted_at', ]
-    ordering = ('expiry', 'stop_loss_high',)
+    list_filter = ('post_type', 'accepts_coin_trading', 'assets_to_trade', 'is_trade',)
+    readonly_fields = ['pk', 'posted_at', 'is_trade']
+    ordering = ('expiry', 'is_trade',)
     fieldsets = (
         (
             ('Market information'), {'fields': ('postOwner', 'post_type', 'assets_to_trade', \
@@ -104,7 +104,7 @@ class MarketListingAdmin(admin.ModelAdmin):
 
 @admin.register(Trading)
 class TradeAdmin(admin.ModelAdmin):
-    list_display = ['pk']
+    list_display = ['pk', 'tradingDate']
     search_fields = ('postId',)
     readonly_fields = ['pk']
     ordering = ('tradingDate',)

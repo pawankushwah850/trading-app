@@ -27,7 +27,7 @@ class AssetsViewSet(ModelViewSet):
     pagination_class = CustomPaginationInvestment
 
     def get_permissions(self):
-        if self.action in ['list', 'retrive']:
+        if self.action in ['list', 'retrieve']:
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsAdminUser]
@@ -51,6 +51,7 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
 
     @action(detail=False, methods=['post'])
     def buy(self, request):
+        print(request)
         ser = InvestmentBuySellSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         asset = ser.validated_data['asset_id']
@@ -71,14 +72,19 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
 
 
 class MarketListingViewSet(ModelViewSet):
-    queryset = MarketListing.objects.all()
     permission_classes = (IsAuthenticated,)
-    pagination_class = CustomPaginationInvestment
+    # todo on production ordering by expiry date , created date.
+    ordering_fields = ['posted_at']
 
     def get_serializer_context(self):
         context = super(MarketListingViewSet, self).get_serializer_context()
         context.update({"request": self.request})
         return context
+
+    def get_queryset(self):
+        if self.action == "list" or self.action == "retrieve":
+            return MarketListing.objects.filter(is_trade=False).order_by('-pk')
+        return MarketListing.objects.all().order_by('-pk')
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -101,19 +107,20 @@ class MarketListingViewSet(ModelViewSet):
         serializer.save(postOwner=self.request.user)
 
     @action(detail=False, methods=['get'])
-    def sell(self, request):
+    def sell(self, request, pk=None):
         data = MarketListing.objects.filter(post_type="SELL")
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
-    def buy(self, request):
+    def buy(self, request, pk=None):
         data = MarketListing.objects.filter(post_type="BUY")
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
 
-class TradingViewSet(ModelViewSet):
+class TradingViewSet(ModelViewSet, InvestmentViewSet):
+    pagination_class = CustomPaginationInvestment
     permission_classes = (IsAuthenticated,)
 
     def get_serializer_context(self):
@@ -123,8 +130,8 @@ class TradingViewSet(ModelViewSet):
 
     def get_queryset(self):
         if self.request.method == "GET":
-            return Trading.objects.filter(TradeOwner=self.request.user)
-        return Trading.objects.all()
+            return Trading.objects.filter(TradeOwner=self.request.user).order_by('-pk')
+        return Trading.objects.all().order_by('-pk')
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -134,41 +141,66 @@ class TradingViewSet(ModelViewSet):
 
     @action(methods=['POST'], detail=False)
     def buy(self, request):
-
+        print(request)
         serializer = TradingSerializerBuy(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        id = serializer.data.get('postId')
+        postId = serializer.data.get('postId')
         cash = float(serializer.validated_data.get('cash'))
-        instance = MarketListing.objects.get(pk=id)
-        if instance.total_price > cash:
+        walletInstance = Wallet.objects.get(owner=self.request.user.id)
+        try:
+            instance = MarketListing.objects.get(pk=postId)
+        except Exception as error:
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+
+        if instance.is_trade == True:
+            return Response("Trading is already done by others.",
+                            status=status.HTTP_208_ALREADY_REPORTED)
+        elif instance.total_price > cash:
             return Response(f'Cash is too low then assets price. Excepted {instance.total_price} ',
                             status=status.HTTP_406_NOT_ACCEPTABLE)
+        elif walletInstance.balance < instance.total_price:
+            return Response("Please recharge your wallet balance", status=status.HTTP_402_PAYMENT_REQUIRED)
         else:
-
-            walletInstance = Wallet.objects.get(owner=self.request.user.id)
-            if walletInstance.balance < cash:
-                return Response("Please recharge your wallet balance")
-            else:
-                walletInstance.balance -= cash
-                walletInstance.save()
-
-            walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
-            walletInstanceClient.balance += cash
-            walletInstanceClient.save()
-
-            instance.delete()
-
-            # todo why trading model not updating while trading
             tradingInstance = Trading.objects.create(
                 postId=serializer.validated_data['postId'],
-                TradeOwner=self.request.user,
+                TradeOwner=request.user,
                 quantity=serializer.validated_data['quantity'],
                 cash=serializer.validated_data['cash'],
             )
-            tradingInstance.save()
+
+            try:
+                tradingInstance.save()
+                instance.is_trade = True
+                instance.save()
+            except Exception as error:
+                return Response(error, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+            walletInstance.balance -= instance.total_price
+            walletInstance.save()
+
+            walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
+            walletInstanceClient.balance += instance.total_price
+            walletInstanceClient.save()
+
+            # remember old state
+            _mutable = request.data._mutable
+
+            # set to mutable
+            request.data._mutable = True
+
+            # сhange the values you want
+            request.data['asset_quantity'] = serializer.validated_data['quantity']
+            request.data['asset_id'] = instance.assets_to_trade_id
+
+            # set mutable flag back
+            request.data._mutable = _mutable
+            request.data._mutable = False
+
+            InvestmentViewSet.buy(self, request)
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-        return Response(serializer.error, status=status.HTTP_406_NOT_ACCEPTABLE)
-
+    @action(methods=['POST'], detail=False)
+    def sell(self):
+        pass

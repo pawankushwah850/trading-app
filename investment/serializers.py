@@ -96,18 +96,16 @@ class TradingSerializerRead(serializers.ModelSerializer):
 
     class Meta:
         model = Trading
-        fields = ('TradeOwner', 'quantity', 'cash', 'postId', 'tradingDate',)
+        fields = ('pk', 'TradeOwner', 'quantity', 'cash', 'postId', 'tradingDate',)
 
 
 class TradingSerializerWrite(serializers.ModelSerializer):
     class Meta:
         model = Trading
-        fields = ('quantity', 'cash', 'postId', 'tradingDate',)
-
+        fields = ('pk', 'quantity', 'cash', 'postId', 'tradingDate',)
 
 
 class TradingSerializerBuy(serializers.Serializer):
-
     postId = serializers.PrimaryKeyRelatedField(queryset=MarketListing.objects.all())
     cash = serializers.FloatField()
     quantity = serializers.FloatField()

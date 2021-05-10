@@ -31,7 +31,7 @@ class Asset(models.Model):
 
     @property
     def live_price(self):
-        #         todo read from live stream probably
+        # todo read from live stream probably
         return self.price
 
 
@@ -117,7 +117,10 @@ class MarketListing(models.Model):
     stop_loss_high = models.FloatField()
     stop_loss_low = models.FloatField()
     postOwner = models.ForeignKey('user.User', on_delete=models.CASCADE)
+    is_trade = models.BooleanField(default=False, verbose_name="is_trade",
+                                   help_text="Its means trading done or not in this post.")
     posted_at = models.DateTimeField(auto_now_add=True)
+
 
     def __str__(self):
         return self.post_type
@@ -150,16 +153,5 @@ class Trading(models.Model):
     def __str__(self):
         return self.postId.post_type
 
-
-
-# class CoinTransaction(models.Model):
-#     TRADE_TYPE_CHOICES = (
-#         ('BUY', 'BUY',),
-#         ('SELL', 'SELL')
-#     )
-#     buyer = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='buyer')
-#     seller = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='seller')
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     activity_type = models.CharField(choices=TRADE_TYPE_CHOICES, max_length=5)
-#     amount = models.FloatField()
-#     total_price = models.FloatField()
+    class Meta:
+        verbose_name_plural = "Trading"
