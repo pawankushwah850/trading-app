@@ -257,5 +257,8 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             response_sell = InvestmentViewSet.sell(self, request)
             request.user = instance.postOwner_id
             print(request.user)
+
+            #####
+
             response_buy = InvestmentViewSet.buy(self, request)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
