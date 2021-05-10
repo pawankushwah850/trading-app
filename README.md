@@ -4,6 +4,8 @@ VirtualCoin is web application of trading or asset market. Here client buy or se
 And Here we have to create rest api for that application.
 
 For more information of rest api. read this api
+[Virtual Currency - API Under Development.pdf](https://github.com/CubexO/VirtualCoin/files/6449346/Virtual.Currency.-.API.Under.Development.pdf)
+
 </pre>
 <h3>Build a git clone of this project. </h3>
 
