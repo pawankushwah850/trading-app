@@ -73,8 +73,6 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
 
 class MarketListingViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
-    # todo on production ordering by expiry date , created date.
-    ordering_fields = ['posted_at']
 
     def get_serializer_context(self):
         context = super(MarketListingViewSet, self).get_serializer_context()
@@ -108,13 +106,13 @@ class MarketListingViewSet(ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def sell(self, request, pk=None):
-        data = MarketListing.objects.filter(post_type="SELL")
+        data = MarketListing.objects.filter(post_type="SELL", is_trade=False)
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def buy(self, request, pk=None):
-        data = MarketListing.objects.filter(post_type="BUY")
+        data = MarketListing.objects.filter(post_type="BUY", is_trade=False)
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
@@ -141,7 +139,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
     @action(methods=['POST'], detail=False)
     def buy(self, request):
-        print(request)
+
         serializer = TradingSerializerBuy(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -150,6 +148,8 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         walletInstance = Wallet.objects.get(owner=self.request.user.id)
         try:
             instance = MarketListing.objects.get(pk=postId)
+        except MarketListing.DoesNotExist:
+            return Response("This post id not found", status=status.HTTP_204_NO_CONTENT)
         except Exception as error:
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
@@ -185,10 +185,8 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
             # remember old state
             _mutable = request.data._mutable
-
             # set to mutable
             request.data._mutable = True
-
             # сhange the values you want
             request.data['asset_quantity'] = serializer.validated_data['quantity']
             request.data['asset_id'] = instance.assets_to_trade_id
@@ -197,10 +195,67 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             request.data._mutable = _mutable
             request.data._mutable = False
 
-            InvestmentViewSet.buy(self, request)
+            response_buy = InvestmentViewSet.buy(self, request)
+            request.user = instance.postOwner_id
+            response_sell = InvestmentViewSet.buy(self, request)
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @action(methods=['POST'], detail=False)
-    def sell(self):
-        pass
+    def sell(self, request):
+
+        serializer = TradingSerializerBuy(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        postId = serializer.data.get('postId')
+        try:
+            instance = MarketListing.objects.get(pk=postId)
+        except Exception as error:
+            Response(error, status=status.HTTP_204_NO_CONTENT)
+
+        asset_price = instance.total_price
+        # trader
+        wallet_balance_instance = Wallet.objects.get(owner=request.user)
+
+        # postowner
+        walletInstanceClient = Wallet.objects.get(owner=instance.postOwner_id)
+
+        if walletInstanceClient.balance < asset_price:
+            return Response('Client not have enough balance to buy!',
+                            status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            tradingInstance = Trading.objects.create(
+                postId=serializer.validated_data['postId'],
+                TradeOwner=request.user,
+                quantity=serializer.validated_data.get('quantity', 1),
+                cash=asset_price
+            )
+            try:
+                tradingInstance.save()
+                instance.is_trade = True
+                instance.save()
+            except Exception as error:
+                return Response(error, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+            wallet_balance_instance.balance += asset_price
+
+            walletInstanceClient.balance -= asset_price
+            walletInstanceClient.save()
+
+            # remember old state
+            _mutable = request.data._mutable
+            # set to mutable
+            request.data._mutable = True
+            # сhange the values you want
+            request.data['asset_quantity'] = serializer.validated_data.get('quantity', 1)
+            request.data['asset_id'] = instance.assets_to_trade_id
+
+            # set mutable flag back
+            request.data._mutable = _mutable
+            request.data._mutable = False
+
+            response_sell = InvestmentViewSet.sell(self, request)
+            request.user = instance.postOwner_id
+            print(request.user)
+            response_buy = InvestmentViewSet.buy(self, request)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)

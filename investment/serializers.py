@@ -106,6 +106,6 @@ class TradingSerializerWrite(serializers.ModelSerializer):
 
 
 class TradingSerializerBuy(serializers.Serializer):
-    postId = serializers.PrimaryKeyRelatedField(queryset=MarketListing.objects.all())
-    cash = serializers.FloatField()
-    quantity = serializers.FloatField()
+    postId = serializers.PrimaryKeyRelatedField(queryset=MarketListing.objects.all(), required=True)
+    cash = serializers.FloatField(required=False)
+    quantity = serializers.FloatField(required=False)
