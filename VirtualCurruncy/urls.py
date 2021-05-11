@@ -20,6 +20,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static, settings
 from django.views.generic import TemplateView
+
 # from drf_yasg import openapi
 # from drf_yasg.views import get_schema_view
 # from rest_framework import permissions
@@ -33,16 +34,16 @@ from django.views.generic import TemplateView
 # )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    url(r'^v1/', include(
-        [path('', include('user.urls_v1'))]
-    )
-        ),
-    url(r'^v1/', include(
-        [path('', include('investment.urls_v1'))]
-    )
-        ),
-    path(
-        'websocktTools/',TemplateView.as_view(template_name="index.html")
-    )
-] + static(settings.MEDIA_URL ,document_root=settings.MEDIA_ROOT)
+                  path('admin/', admin.site.urls),
+                  url(r'^v1/', include(
+                      [path('', include('user.urls_v1'))]
+                  )
+                      ),
+                  url(r'^v1/', include(
+                      [path('', include('investment.urls_v1'))]
+                  )
+                      ),
+                  path(
+                      'websocktTools/', TemplateView.as_view(template_name="index.html")
+                  )
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

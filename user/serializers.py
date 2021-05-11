@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from user.models import User, Referral, ForgetPasswordToken
+from investment.serializers import *
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -48,3 +49,4 @@ class ResetPasswordSerializer(serializers.Serializer):
                 return token
         except ForgetPasswordToken.DoesNotExist:
             raise serializers.ValidationError('Invalid Token.')
+

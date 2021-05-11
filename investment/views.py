@@ -1,5 +1,3 @@
-from django.db.models.lookups import In
-from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 from .models import *
 from rest_framework import mixins
@@ -10,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, SAFE_METHODS, IsAuthenticated, IsAdminUser
 from rest_framework import status
 from ExtraServices.Pagination import CustomPaginationInvestment
+from django.db import transaction
 
 
 class WalletViewSet(mixins.ListModelMixin, GenericViewSet):
@@ -106,13 +105,13 @@ class MarketListingViewSet(ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def sell(self, request, pk=None):
-        data = MarketListing.objects.filter(post_type="SELL", is_trade=False)
+        data = MarketListing.objects.filter(post_type="SELL", is_trade=False).order_by('-posted_at')
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def buy(self, request, pk=None):
-        data = MarketListing.objects.filter(post_type="BUY", is_trade=False)
+        data = MarketListing.objects.filter(post_type="BUY", is_trade=False).order_by('-posted_at')
         serializers = MarketListingSerializer(data, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
 
@@ -169,35 +168,32 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
                 cash=serializer.validated_data['cash'],
             )
 
-            try:
-                tradingInstance.save()
-                instance.is_trade = True
-                instance.save()
-            except Exception as error:
-                return Response(error, status=status.HTTP_406_NOT_ACCEPTABLE)
-
             walletInstance.balance -= instance.total_price
-            walletInstance.save()
-
             walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
             walletInstanceClient.balance += instance.total_price
-            walletInstanceClient.save()
 
-            # remember old state
+            try:
+                with transaction.atomic():
+                    tradingInstance.save()
+                    instance.is_trade = True
+                    instance.save()
+                    walletInstance.save()
+                    walletInstanceClient.save()
+            except Exception as error:
+                return Response(error)
+
             _mutable = request.data._mutable
-            # set to mutable
             request.data._mutable = True
-            # сhange the values you want
             request.data['asset_quantity'] = serializer.validated_data['quantity']
             request.data['asset_id'] = instance.assets_to_trade_id
 
-            # set mutable flag back
             request.data._mutable = _mutable
             request.data._mutable = False
 
-            response_buy = InvestmentViewSet.buy(self, request)
-            request.user = instance.postOwner_id
-            response_sell = InvestmentViewSet.buy(self, request)
+            with transaction.atomic():
+                response_buy = InvestmentViewSet.buy(self, request)
+                request.user = instance.postOwner_id
+                response_sell = InvestmentViewSet.sell(self, request)
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
@@ -230,35 +226,36 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
                 quantity=serializer.validated_data.get('quantity', 1),
                 cash=asset_price
             )
-            try:
-                tradingInstance.save()
-                instance.is_trade = True
-                instance.save()
-            except Exception as error:
-                return Response(error, status=status.HTTP_406_NOT_ACCEPTABLE)
 
             wallet_balance_instance.balance += asset_price
-
             walletInstanceClient.balance -= asset_price
-            walletInstanceClient.save()
 
-            # remember old state
+            try:
+                with transaction.atomic():
+                    tradingInstance.save()
+                    instance.is_trade = True
+                    instance.save()
+                    wallet_balance_instance.save()
+                    walletInstanceClient.save()
+            except Exception as error:
+                return Response(error, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
             _mutable = request.data._mutable
-            # set to mutable
             request.data._mutable = True
-            # сhange the values you want
             request.data['asset_quantity'] = serializer.validated_data.get('quantity', 1)
             request.data['asset_id'] = instance.assets_to_trade_id
-
-            # set mutable flag back
             request.data._mutable = _mutable
             request.data._mutable = False
 
-            response_sell = InvestmentViewSet.sell(self, request)
-            request.user = instance.postOwner_id
-            print(request.user)
+            with transaction.atomic():
+                response_sell = InvestmentViewSet.sell(self, request)
+                request.user = instance.postOwner_id
+                response_buy = InvestmentViewSet.buy(self, request)
 
-            #####
-
-            response_buy = InvestmentViewSet.buy(self, request)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+
+#todo user cannot market-post if his investment empty or low then excepted
+# user cannot buy or sell own investment. & socket fetching
+# admin side graph & payment gateway
