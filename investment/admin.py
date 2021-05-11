@@ -41,7 +41,7 @@ class InvestmentAdmin(admin.ModelAdmin):
     search_fields = ('owner__email', 'asset__name',)
     list_filter = ('purchased_at', 'is_active',)
     ordering = ('purchased_price', 'purchased_quantity',)
-    readonly_fields = ['owner', 'purchased_at']
+    readonly_fields = ['purchased_at']
     fieldsets = (
         (
             ('User Information'), {'fields': ('owner', 'asset',)}

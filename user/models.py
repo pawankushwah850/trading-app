@@ -28,6 +28,9 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
+    class Meta:
+        ordering = ['-last_updated']
+
 
 
 
@@ -40,6 +43,7 @@ class Referral(models.Model):
     def __str__(self):
         return self.referred_to.email
 
+
 class Notification(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -49,6 +53,7 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.user.email
+
 
 class ForgetPasswordToken(models.Model):
     user = models.ForeignKey('user.User', on_delete=models.CASCADE)

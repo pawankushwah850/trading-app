@@ -52,27 +52,21 @@ class CustomNotificationAdmin(admin.ModelAdmin):
     )
 
 
-IGNORE_FIELDS = ['id', 'password', 'identity_document', 'profile_photo']
-
-
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = sorted([f.name for f in User._meta.fields if (f.name not in IGNORE_FIELDS)])
-    ordering = ('-created_at', '-last_updated')
+    list_display = ['name', 'email', 'phone_number', 'verification_status',
+                    'language', 'last_updated']
+    ordering = ('-created_at', '-last_updated',)
     search_fields = ('name', 'email', 'phone_number',)
-    list_filter = ('last_updated', 'last_login', 'is_superuser', 'is_staff', 'is_active', 'user_role')
+    list_filter = ('last_login', 'is_superuser', 'is_staff', 'is_active',)
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         (('Personal info'), {'fields': ('name', 'profile_photo', 'user_role', 'phone_number',
                                         'date_of_birth', 'language', 'identity_document',)}),
         (('Permissions'), {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'fields': ('verification_status', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',),
         }),
-        (('Important dates'), {'fields': ('last_login', 'date_joined', 'last_updated')}),
-    )
-    readonly_fields = (
-        'password', 'last_login', 'last_updated', 'is_superuser', 'email',
-        'phone_number', 'date_of_birth', 'date_joined', 'is_active', 'name',
+        (('Important dates'), {'fields': ('last_login', 'date_joined',)}),
     )
 
     actions = (make_super_user, make_normal_user,)
