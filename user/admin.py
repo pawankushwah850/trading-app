@@ -60,7 +60,7 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ('name', 'email', 'phone_number',)
     list_filter = ('last_login', 'is_superuser', 'is_staff', 'is_active',)
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
+        (None, {'fields': ('email',)}),
         (('Personal info'), {'fields': ('name', 'profile_photo', 'user_role', 'phone_number',
                                         'date_of_birth', 'language', 'identity_document',)}),
         (('Permissions'), {
@@ -68,5 +68,5 @@ class CustomUserAdmin(UserAdmin):
         }),
         (('Important dates'), {'fields': ('last_login', 'date_joined',)}),
     )
-
+    change_list_template = 'user/change_list_graph.html'
     actions = (make_super_user, make_normal_user,)

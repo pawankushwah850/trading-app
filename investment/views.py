@@ -258,4 +258,4 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
 #todo user cannot market-post if his investment empty or low then excepted
 # user cannot buy or sell own investment. & socket fetching
-# admin side graph & payment gateway
+# custom_admin side graph & payment gateway
