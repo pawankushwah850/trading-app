@@ -60,6 +60,7 @@ class Investment(models.Model):
 
     @transaction.atomic
     def remove(self, quantity, purchased_price):
+
         total_quantity_purchased = self.purchased_quantity - quantity
         total_investment_made = self.total_investment - (quantity * purchased_price)
 
@@ -81,7 +82,6 @@ class Investment(models.Model):
     @property
     def profit_and_loss(self):
         return self.total_investment - self.total_value
-
 
 class InvestmentOrders(models.Model):
     asset = models.ForeignKey('investment.Asset', on_delete=models.RESTRICT)
@@ -121,11 +121,11 @@ class MarketListing(models.Model):
                                    help_text="Its means trading done or not in this post.")
     posted_at = models.DateTimeField(auto_now_add=True)
 
-
     def __str__(self):
         return self.post_type
 
     def clean(self):
+
         if self.has_stop_condition == True:
             if ((self.expiry == "" or self.expiry == None) and (
                     self.stop_loss_low == "" or self.stop_loss_low == None)):

@@ -1,5 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from .models import *
+from user.models import *
 from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
 from .serializers import *
@@ -100,6 +101,30 @@ class MarketListingViewSet(ModelViewSet):
         kwargs['partial'] = True
         return super().update(request, *args, **kwargs)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get('post_type') == "SELL":
+            asset_instance = serializer.validated_data.get('assets_to_trade')
+            investment_instance = Investment.objects.filter(owner=request.user, asset__id=asset_instance.id)
+            # print(investment_instance.values('pk', 'asset__name', 'purchased_quantity'))
+            number_of_investment = investment_instance.count()
+            print(number_of_investment)
+            error_response = {
+                "message": ""
+            }
+            if number_of_investment < 1:
+                error_response["message"] = f"No {asset_instance.name} Investment found "
+                return Response(error_response, status=status.HTTP_204_NO_CONTENT)
+            elif (list(investment_instance.values('purchased_quantity'))[0].get('purchased_quantity') < 1):
+                error_response["message"] = f"You dont have enough quantity to make post of {asset_instance.name}!"
+                return Response(error_response,
+                                status=status.HTTP_204_NO_CONTENT)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     def perform_create(self, serializer):
         serializer.save(postOwner=self.request.user)
 
@@ -139,27 +164,35 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
     @action(methods=['POST'], detail=False)
     def buy(self, request):
 
-        serializer = TradingSerializerBuy(data=request.data)
+        serializer = TradingSerializerBuySell(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         postId = serializer.data.get('postId')
         cash = float(serializer.validated_data.get('cash'))
         walletInstance = Wallet.objects.get(owner=self.request.user.id)
+        error_response = {
+            "message": ""
+        }
         try:
             instance = MarketListing.objects.get(pk=postId)
         except MarketListing.DoesNotExist:
-            return Response("This post id not found", status=status.HTTP_204_NO_CONTENT)
+            error_response["message"] = f"This {postId} not found"
+            return Response(error_response, status=status.HTTP_204_NO_CONTENT)
         except Exception as error:
-            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            error_response["message"] = error
+            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
 
         if instance.is_trade == True:
-            return Response("Trading is already done by others.",
-                            status=status.HTTP_208_ALREADY_REPORTED)
+            error_response["message"] = "Trading is already done by others."
+            return Response(error_response,
+                            status=status.HTTP_204_NO_CONTENT)
         elif instance.total_price > cash:
-            return Response(f'Cash is too low then assets price. Excepted {instance.total_price} ',
+            error_response["message"] = f"Cash is too low then assets price. Excepted {instance.total_price}"
+            return Response(error_response,
                             status=status.HTTP_406_NOT_ACCEPTABLE)
         elif walletInstance.balance < instance.total_price:
-            return Response("Please recharge your wallet balance", status=status.HTTP_402_PAYMENT_REQUIRED)
+            error_response["message"] = "Please recharge your wallet balance"
+            return Response(error_response, status=status.HTTP_402_PAYMENT_REQUIRED)
         else:
             tradingInstance = Trading.objects.create(
                 postId=serializer.validated_data['postId'],
@@ -192,7 +225,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
             with transaction.atomic():
                 response_buy = InvestmentViewSet.buy(self, request)
-                request.user = instance.postOwner_id
+                request.user = instance.postOwner
                 response_sell = InvestmentViewSet.sell(self, request)
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -200,7 +233,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
     @action(methods=['POST'], detail=False)
     def sell(self, request):
 
-        serializer = TradingSerializerBuy(data=request.data)
+        serializer = TradingSerializerBuySell(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         postId = serializer.data.get('postId')
@@ -240,7 +273,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             except Exception as error:
                 return Response(error, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-
             _mutable = request.data._mutable
             request.data._mutable = True
             request.data['asset_quantity'] = serializer.validated_data.get('quantity', 1)
@@ -250,12 +282,11 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
             with transaction.atomic():
                 response_sell = InvestmentViewSet.sell(self, request)
-                request.user = instance.postOwner_id
+                request.user = instance.postOwner
                 response_buy = InvestmentViewSet.buy(self, request)
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-
-#todo user cannot market-post if his investment empty or low then excepted
+# todo user cannot market-post if his investment empty or low then excepted
 # user cannot buy or sell own investment. & socket fetching
 # custom_admin side graph & payment gateway
