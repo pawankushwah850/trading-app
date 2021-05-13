@@ -103,4 +103,4 @@ class ProfileViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericView
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
-# todo verified by custom_admin : User can see their profile, their confusion portfolio and listings
+    # todo verified by custom_admin : User can see their profile, their confusion portfolio and listings

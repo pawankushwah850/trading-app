@@ -32,9 +32,6 @@ class User(AbstractUser):
         ordering = ['-last_updated']
 
 
-
-
-
 class Referral(models.Model):
     referred_by = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='referred_by')
     referred_to = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='referred_to')
