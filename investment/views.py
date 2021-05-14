@@ -6,7 +6,7 @@ from rest_framework.viewsets import GenericViewSet
 from .serializers import *
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, SAFE_METHODS, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import status
 from ExtraServices.Pagination import CustomPaginationInvestment
 from django.db import transaction
@@ -109,17 +109,11 @@ class MarketListingViewSet(ModelViewSet):
             investment_instance = Investment.objects.filter(owner=request.user, asset__id=asset_instance.id)
             # print(investment_instance.values('pk', 'asset__name', 'purchased_quantity'))
             number_of_investment = investment_instance.count()
-            print(number_of_investment)
-            error_response = {
-                "message": ""
-            }
             if number_of_investment < 1:
-                error_response["message"] = f"No {asset_instance.name} Investment found "
-                return Response(error_response, status=status.HTTP_204_NO_CONTENT)
+                raise serializers.ValidationError(f"No {asset_instance.name} Investment found ")
             elif (list(investment_instance.values('purchased_quantity'))[0].get('purchased_quantity') < 1):
-                error_response["message"] = f"You dont have enough quantity to make post of {asset_instance.name}!"
-                return Response(error_response,
-                                status=status.HTTP_204_NO_CONTENT)
+                raise serializers.ValidationError(
+                    f"You dont have enough quantity to make post of {asset_instance.name}!")
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -170,29 +164,23 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         postId = serializer.data.get('postId')
         cash = float(serializer.validated_data.get('cash'))
         walletInstance = Wallet.objects.get(owner=self.request.user.id)
-        error_response = {
-            "message": ""
-        }
+
         try:
             instance = MarketListing.objects.get(pk=postId)
         except MarketListing.DoesNotExist:
-            error_response["message"] = f"This {postId} not found"
-            return Response(error_response, status=status.HTTP_204_NO_CONTENT)
+            return serializers.ValidationError(f"This {postId} not found")
         except Exception as error:
-            error_response["message"] = error
-            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
-
-        if instance.is_trade == True:
-            error_response["message"] = "Trading is already done by others."
-            return Response(error_response,
-                            status=status.HTTP_204_NO_CONTENT)
+            return serializers.ValidationError(error)
+        if instance.postOwner == request.user:
+            raise serializers.ValidationError("you cannot trade on own post")
+        elif instance.post_type != "SELL":
+            raise serializers.ValidationError("you can trade only sell type of post")
+        elif instance.is_trade == True:
+            return serializers.ValidationError("Trading is already done by others.")
         elif instance.total_price > cash:
-            error_response["message"] = f"Cash is too low then assets price. Excepted {instance.total_price}"
-            return Response(error_response,
-                            status=status.HTTP_406_NOT_ACCEPTABLE)
+            return serializers.ValidationError(f"Cash is too low then assets price. Excepted {instance.total_price}")
         elif walletInstance.balance < instance.total_price:
-            error_response["message"] = "Please recharge your wallet balance"
-            return Response(error_response, status=status.HTTP_402_PAYMENT_REQUIRED)
+            return serializers.ValidationError("Please recharge your wallet balance")
         else:
             tradingInstance = Trading.objects.create(
                 postId=serializer.validated_data['postId'],
@@ -213,7 +201,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
                     walletInstance.save()
                     walletInstanceClient.save()
             except Exception as error:
-                return Response(error)
+                raise serializers.ValidationError(error)
 
             _mutable = request.data._mutable
             request.data._mutable = True
@@ -240,7 +228,25 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         try:
             instance = MarketListing.objects.get(pk=postId)
         except Exception as error:
-            Response(error, status=status.HTTP_204_NO_CONTENT)
+            raise serializers.ValidationError(error)
+
+        if instance.postOwner == request.user:
+            raise serializers.ValidationError("you cannot trade on own post")
+        elif instance.post_type != "BUY":
+            raise serializers.ValidationError("you can only trade only buy type post")
+
+        elif instance.is_trade == True:
+            raise serializers.ValidationError("Trading already done by other")
+
+        investment_instance = Investment.objects.filter(owner=request.user, asset__id=instance.assets_to_trade_id)
+        # print(investment_instance.values('pk', 'asset__name', 'purchased_quantity'))
+        number_of_investment_quantity = investment_instance.count()
+
+        if number_of_investment_quantity < 1:
+            raise serializers.ValidationError("sorry!,You not have asset to sell")
+
+        elif list(investment_instance.values('purchased_quantity'))[0].get('purchased_quantity') < 1:
+            raise serializers.ValidationError("sorry!,You not have asset quantity to sell")
 
         asset_price = instance.total_price
         # trader
@@ -250,8 +256,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         walletInstanceClient = Wallet.objects.get(owner=instance.postOwner_id)
 
         if walletInstanceClient.balance < asset_price:
-            return Response('Client not have enough balance to buy!',
-                            status=status.HTTP_406_NOT_ACCEPTABLE)
+            raise serializers.ValidationError('Client not have enough balance to buy!')
         else:
             tradingInstance = Trading.objects.create(
                 postId=serializer.validated_data['postId'],
@@ -271,7 +276,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
                     wallet_balance_instance.save()
                     walletInstanceClient.save()
             except Exception as error:
-                return Response(error, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                raise serializers.ValidationError(error)
 
             _mutable = request.data._mutable
             request.data._mutable = True
@@ -287,6 +292,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-# todo user cannot market-post if his investment empty or low then excepted
-# user cannot buy or sell own investment. & socket fetching
+# todo in buy trading user can trade only when investment.purchased_quantity have enough quantity & socket fetching
 # custom_admin side graph & payment gateway
+# code reuseable

@@ -21,17 +21,6 @@ from django.conf.urls.static import static
 
 from django.views.generic import TemplateView
 
-# from drf_yasg import openapi
-# from drf_yasg.views import get_schema_view
-# from rest_framework import permissions
-# urlpatterns = [
-#     path('custom_admin/', custom_admin.site.urls),
-#     path('v1/', include('user.urls_v1'), name='v1_urls'),
-# ]
-# urlpatterns = patterns('',
-#     (r'^', include('app.urls')),
-#     (r'^custom_admin/', include(custom_admin.site.urls)),
-# )
 
 urlpatterns = [
                   path('admin/', admin.site.urls),

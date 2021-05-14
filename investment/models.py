@@ -1,7 +1,7 @@
 from django.db import models
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from functools import reduce
+from investment.services.custom_validator import PositiveQuantity
 
 
 class Wallet(models.Model):
@@ -39,7 +39,7 @@ class Investment(models.Model):
     owner = models.ForeignKey('user.User', on_delete=models.CASCADE)
     asset = models.ForeignKey("investment.Asset", on_delete=models.RESTRICT)
     purchased_price = models.FloatField(default=0)  # todo do we need to average out the price on new buy or sell
-    purchased_quantity = models.FloatField(default=0)
+    purchased_quantity = models.FloatField(default=0, validators=[PositiveQuantity])
     purchased_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -60,6 +60,10 @@ class Investment(models.Model):
 
     @transaction.atomic
     def remove(self, quantity, purchased_price):
+        # todo we are asuming for now purchased_quantity decrease by 1.
+
+        if (self.purchased_quantity <= 0):
+            raise ValidationError("You cannot sell more investment...")
 
         total_quantity_purchased = self.purchased_quantity - quantity
         total_investment_made = self.total_investment - (quantity * purchased_price)
@@ -82,6 +86,7 @@ class Investment(models.Model):
     @property
     def profit_and_loss(self):
         return self.total_investment - self.total_value
+
 
 class InvestmentOrders(models.Model):
     asset = models.ForeignKey('investment.Asset', on_delete=models.RESTRICT)

