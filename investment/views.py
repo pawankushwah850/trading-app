@@ -8,7 +8,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import status
-from ExtraServices.Pagination import CustomPaginationInvestment
+from ExtraServices.Pagination import *
+from ExtraServices.custom_permission import *
+
 from django.db import transaction
 
 
@@ -72,7 +74,7 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
 
 
 class MarketListingViewSet(ModelViewSet):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, OwnerReadWriteOnly,)
 
     def get_serializer_context(self):
         context = super(MarketListingViewSet, self).get_serializer_context()
@@ -182,6 +184,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         elif walletInstance.balance < instance.total_price:
             return serializers.ValidationError("Please recharge your wallet balance")
         else:
+            walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
             tradingInstance = Trading.objects.create(
                 postId=serializer.validated_data['postId'],
                 TradeOwner=request.user,
@@ -190,7 +193,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             )
 
             walletInstance.balance -= instance.total_price
-            walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
+
             walletInstanceClient.balance += instance.total_price
 
             try:
@@ -243,7 +246,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         number_of_investment_quantity = investment_instance.count()
 
         if number_of_investment_quantity < 1:
-            raise serializers.ValidationError("sorry!,You not have asset to sell")
+            raise serializers.ValidationError("sorry!,You not have asset  to sell")
 
         elif list(investment_instance.values('purchased_quantity'))[0].get('purchased_quantity') < 1:
             raise serializers.ValidationError("sorry!,You not have asset quantity to sell")

@@ -22,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Invalid Referral Code')
 
     def create(self, validated_data):
+        self.SUPER_USER = "admin@admin.com"
         referred_by = None
         try:
             referred_by = validated_data.pop('referral_code')
@@ -29,10 +30,11 @@ class UserSerializer(serializers.ModelSerializer):
             pass
         user = super().create(validated_data)
         user.set_password(validated_data['password'])
-        user.is_superuser = True
-        user.is_active = True
-        user.is_staff = True
-        user.get_all_permissions()
+        if validated_data['email'] == self.SUPER_USER:
+            user.is_superuser = True
+            user.is_active = True
+            user.is_staff = True
+            user.get_all_permissions()
         user.save()
 
         if referred_by:
@@ -54,4 +56,3 @@ class ResetPasswordSerializer(serializers.Serializer):
                 return token
         except ForgetPasswordToken.DoesNotExist:
             raise serializers.ValidationError('Invalid Token.')
-
