@@ -1,7 +1,10 @@
 from django import template
 from django.contrib.auth import get_user_model
 import json
+from collections import Counter
+
 register = template.Library()
+
 
 @register.filter(name='user_lables_set')
 def user_lables_set(value):
@@ -9,3 +12,8 @@ def user_lables_set(value):
     data = [e.created_at.strftime('%D') for e in User.objects.all()]
     return json.dumps(list(set(data)))
 
+@register.filter(name='user_data_set')
+def user_data_set(value):
+    User = get_user_model()
+    data = list(Counter([e.created_at.strftime('%D') for e in User.objects.all()]).values())
+    return json.dumps(data)

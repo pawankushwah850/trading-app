@@ -64,8 +64,11 @@ class Investment(models.Model):
 
         if (self.purchased_quantity <= 0):
             raise ValidationError("You cannot sell more investment...")
+        elif (self.purchased_quantity == 1):
+            total_quantity_purchased = self.purchased_quantity
+        else:
+            total_quantity_purchased = self.purchased_quantity - quantity
 
-        total_quantity_purchased = self.purchased_quantity - quantity
         total_investment_made = self.total_investment - (quantity * purchased_price)
 
         self.purchased_quantity -= quantity

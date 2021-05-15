@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'name', 'email', 'phone_number', 'password', 'verification_status', 'profile_photo',
-                  'referral_code', 'language']
+                  'referral_code', 'language', 'created_at']
         extra_kwargs = {
             'identity_document': {'write_only': True},
             'language': {'write_only': True},
