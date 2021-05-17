@@ -35,3 +35,7 @@ const graph = function (dom_name, graph_type, heading, labels_data, dataset) {
         }
     });
 }
+
+const get_ctx = function (id){
+    return document.getElementById(id).getContext('2d');
+};

@@ -50,7 +50,7 @@ class MarketListingSerializer(serializers.ModelSerializer):
         fields = (
             'pk', 'postOwner', 'post_type', 'assets_to_trade', 'accepted_coins', 'traded_coins', 'remaining_coins',
             'partial_binding', 'accepts_coin_trading', 'accepts_money_transaction', 'has_stop_condition',
-            'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at',)
+            'expiry', 'has_stop_loss_range', 'stop_loss_high', 'stop_loss_low', 'posted_at', 'total_price',)
 
 
 class MarketListingSerializerWrite(serializers.ModelSerializer):

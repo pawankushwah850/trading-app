@@ -5,22 +5,23 @@
     <link rel="stylesheet" href="{% static 'main.css' %}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.min.js"></script>
     <script src="{% static 'javascript/graph.js' %}"></script>
+    <script src="{% static 'javascript/data_parser.js' %}"></script>
     <script>
 
         window.onload = () => {
-            const user_data = JSON.parse(document.getElementById('user_data_set').value);
-            const verfication_data = JSON.parse(document.getElementById('verified_users').value);
+            const user_data = data_parser('user_data_set');
+            const verification_data = data_parser('verified_users');
 
-            const ctx = document.getElementById('user_chart').getContext('2d');
-            const ctx2 = document.getElementById('verfication_chart').getContext('2d');
+            const ctx = get_ctx('user_chart');
+            const ctx2 = get_ctx('verfication_chart');
 
             graph(dom_name = ctx, graph_type = 'bar', heading = 'user registration per day',
                 labels_data = user_data.map(x => x[0]),
                 dataset = user_data.map(x => x[1])
             )
             graph(dom_name = ctx2, graph_type = 'polarArea', heading = 'unverified or unverified user',
-                labels_data =  Object.keys(verfication_data),
-                dataset =  Object.values(verfication_data)
+                labels_data = Object.keys(verification_data),
+                dataset = Object.values(verification_data)
             )
         }
 

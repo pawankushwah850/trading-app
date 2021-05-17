@@ -295,6 +295,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-# todo in buy trading user can trade only when investment.purchased_quantity have enough quantity & socket fetching
+#todo  & socket fetching
 # custom_admin side graph & payment gateway
 # code reuseable

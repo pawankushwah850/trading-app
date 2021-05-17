@@ -21,6 +21,9 @@ from django.conf.urls.static import static
 
 from django.views.generic import TemplateView
 
+admin.site.site_header = "Virtual coin"
+admin.site.site_title = "Virtual coin | admin panel"
+admin.site.index_title = "Virtual coin"
 
 urlpatterns = [
                   path('admin/', admin.site.urls),

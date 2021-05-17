@@ -11,13 +11,9 @@ For more information of rest api. read this api
 
 <h3>Ready your virtual env. </h3> <pre>pip install -r requirment.txt </pre>
 
-<h3> Then go to the manage.py directory. </h3>
+<h3> Then go to the manage.py directory, and Run </h3>
 
-<h3> RUN </h3> <pre>python manage.py makemigrations investment</pre>
-
-<h3> RUN </h3> <pre>python manage.py makemigrations user</pre>
-
-<h3> RUN </h3><pre>python manage.py migrate</pre>
+<pre>source migration.sh</pre>
 
 <h3> Open Django Shell to create superuser</h3>
 

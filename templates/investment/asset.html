@@ -5,13 +5,13 @@
     <link rel="stylesheet" href="{% static 'main.css' %}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.min.js"></script>
     <script src="{% static 'javascript/graph.js' %}"></script>
+    <script src="{% static 'javascript/data_parser.js' %}"></script>
     <script>
 
         window.onload = () => {
 
-            const asset_price_per_unit_data = JSON.parse(document.getElementById('asset_price_per_unit').value);
-
-            const ctx = document.getElementById('asset_graph').getContext('2d');
+            const asset_price_per_unit_data = data_parser('asset_price_per_unit');
+            const ctx = get_ctx('asset_graph');
 
             graph(dom_name = ctx, graph_type = 'bar', heading = 'Asset price per unit',
                 labels_data = Object.keys(asset_price_per_unit_data),
