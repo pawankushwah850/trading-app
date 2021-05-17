@@ -1,0 +1,33 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+{% block extrahead %}
+    {% load investment_tag %}
+    <link rel="stylesheet" href="{% static 'main.css' %}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.min.js"></script>
+    <script src="{% static 'javascript/graph.js' %}"></script>
+    <script>
+
+        window.onload = () => {
+
+            const asset_price_per_unit_data = JSON.parse(document.getElementById('asset_price_per_unit').value);
+
+            const ctx = document.getElementById('asset_graph').getContext('2d');
+
+            graph(dom_name = ctx, graph_type = 'bar', heading = 'Asset price per unit',
+                labels_data = Object.keys(asset_price_per_unit_data),
+                dataset = Object.values(asset_price_per_unit_data)
+            )
+        }
+
+    </script>
+
+{% endblock %}
+{% block content %}
+    <div class="divider"></div>
+    <input type="hidden" id="asset_price_per_unit" value="{{ e|asset_price_per_unit }}">
+
+    <div class="space">
+        <canvas id="asset_graph" width="400" height="200"></canvas>
+    </div>
+    {{ block.super }}
+{% endblock %}

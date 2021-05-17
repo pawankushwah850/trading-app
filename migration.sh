@@ -1,3 +1,4 @@
+command cd /home/ubuntu/Documents/virtualcoin/VirtualCoin
 command rm -f db.sqlite3
 command cd user && rm -r migrations
 command cd ../

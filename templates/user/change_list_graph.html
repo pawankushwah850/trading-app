@@ -4,34 +4,24 @@
     {% load user_tag %}
     <link rel="stylesheet" href="{% static 'main.css' %}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.min.js"></script>
+    <script src="{% static 'javascript/graph.js' %}"></script>
     <script>
 
         window.onload = () => {
+            const user_data = JSON.parse(document.getElementById('user_data_set').value);
+            const verfication_data = JSON.parse(document.getElementById('verified_users').value);
 
-            const ctx = document.getElementById('myChart').getContext('2d');
-            const graph = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: JSON.parse(document.getElementById('user_lables_set').value),
-                    datasets: [{
-                        label: 'user registration per day',
-                        {# No of registration per day  #}
-                        data: JSON.parse(document.getElementById('user_data_set').value),
-                        backgroundColor: 'rgb(180,234,118)',
-                        borderColor: 'rgb(45,144,34)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    animation: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+            const ctx = document.getElementById('user_chart').getContext('2d');
+            const ctx2 = document.getElementById('verfication_chart').getContext('2d');
 
+            graph(dom_name = ctx, graph_type = 'bar', heading = 'user registration per day',
+                labels_data = user_data.map(x => x[0]),
+                dataset = user_data.map(x => x[1])
+            )
+            graph(dom_name = ctx2, graph_type = 'polarArea', heading = 'unverified or unverified user',
+                labels_data =  Object.keys(verfication_data),
+                dataset =  Object.values(verfication_data)
+            )
         }
 
     </script>
@@ -39,12 +29,11 @@
 {% endblock %}
 {% block content %}
     <div class="divider"></div>
-    <input type="hidden" id="user_lables_set" value='{{ e|user_lables_set }}'>
     <input type="hidden" id="user_data_set" value="{{ e|user_data_set }}">
-
+    <input type="hidden" id="verified_users" value="{{ e|verified_users }}">
     <div class="space">
-
-        <canvas id="myChart" width="400" height="100"></canvas>
+        <canvas id="user_chart" width="400" height="100"></canvas>
+        <canvas id="verfication_chart" width="400" height="100"></canvas>
     </div>
     {{ block.super }}
 {% endblock %}

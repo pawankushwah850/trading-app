@@ -32,7 +32,7 @@ class AssetAdmin(admin.ModelAdmin):
             ('Information'), {'fields': ('name', 'price', 'icon', 'is_public',)}
         ),
     )
-
+    change_list_template = "investment/asset.html"
 
 @admin.register(Investment)
 class InvestmentAdmin(admin.ModelAdmin):
