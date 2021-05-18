@@ -40,6 +40,7 @@ class Investment(models.Model):
     asset = models.ForeignKey("investment.Asset", on_delete=models.RESTRICT)
     purchased_price = models.FloatField(default=0)  # todo do we need to average out the price on new buy or sell
     purchased_quantity = models.FloatField(default=0, validators=[PositiveQuantity])
+    Profit_and_loss = models.FloatField(blank=True, null=True)
     purchased_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -53,6 +54,7 @@ class Investment(models.Model):
 
         self.purchased_quantity += quantity
         self.purchased_price = total_investment_made / total_quantity_purchased
+        self.Profit_and_loss = self.profit_and_loss
         self.save()
         InvestmentOrders.objects.create(asset=self.asset, price=purchased_price,
                                         owner=self.owner, is_completed=True,

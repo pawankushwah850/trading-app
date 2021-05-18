@@ -4,6 +4,37 @@ from user.models import User, Referral, ForgetPasswordToken
 from investment.serializers import *
 
 
+class SignupSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('name', 'email', 'password', 'profile_photo', 'referral_code',)
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+
+    def validate_referral_code(self, referral_code):
+
+        try:
+            return User.objects.get(referral_code=referral_code)
+        except User.DoesNotExist:
+            raise serializers.ValidationError('Invalid Referral Code')
+
+    def create(self, validated_data):
+
+        referred_by = None
+        try:
+            referred_by = validated_data.pop('referral_code')
+        except KeyError:
+            pass
+        user = super().create(validated_data)
+        user.set_password(validated_data['password'])
+
+        user.save()
+        if referred_by:
+            Referral.objects.create(referred_by=referred_by,
+                                    referred_to=user)
+        return user
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -50,9 +81,11 @@ class ResetPasswordSerializer(serializers.Serializer):
     def validate_token(self, token):
         try:
             token = ForgetPasswordToken.objects.get(token=token)
+            print(token.token)
+            print(token.expire_at.strftime('%D'))
             if token.is_expired:
                 raise serializers.ValidationError('Invalid Token.')
             else:
                 return token
         except ForgetPasswordToken.DoesNotExist:
-            raise serializers.ValidationError('Invalid Token.')
+            raise serializers.ValidationError('Invalid not Token.')

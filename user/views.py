@@ -10,8 +10,18 @@ from .models import *
 from .serializers import *
 from investment.serializers import *
 from investment.models import *
-
+from rest_framework import generics
 from ExtraServices.Pagination import CustomPaginationUser
+from secrets import token_hex
+
+
+class UserRegister(mixins.CreateModelMixin, generics.GenericAPIView):
+    serializer_class = SignupSerializers
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
 
 class UserViewSet(ModelViewSet):
@@ -35,10 +45,11 @@ class UserViewSet(ModelViewSet):
             try:
                 user = User.objects.get(email__iexact=request.data.get('email'))
                 ForgetPasswordToken.objects.all().delete()
-                token = ForgetPasswordToken.objects.create(user=user,
+                token = ForgetPasswordToken.objects.create(user=user, token=str(token_hex(5)),
                                                            expire_at=timezone.now() + timedelta(days=3))
+                print(token)
                 print(token.token)
-                return Response(status=status.HTTP_200_OK)
+                return Response({'token': token.token}, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else:
@@ -46,12 +57,12 @@ class UserViewSet(ModelViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def reset_password(self, request):
-        ser = serializers.ResetPasswordSerializer(data=request.data)
+        ser = ResetPasswordSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         token = ser.validated_data['token']
         token.user.set_password(ser.validated_data['new_password'])
         token.user.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"body": "password reset successfully"}, status=status.HTTP_200_OK)
 
 
 class ProfileViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):

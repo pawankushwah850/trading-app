@@ -34,14 +34,15 @@ class AssetAdmin(admin.ModelAdmin):
     )
     change_list_template = "investment/asset.html"
 
+
 @admin.register(Investment)
 class InvestmentAdmin(admin.ModelAdmin):
-    list_display = ['owner', 'asset', 'asset', 'purchased_quantity', 'is_active', 'purchased_at']
+    list_display = ['owner', 'asset', 'purchased_quantity', 'Profit_and_loss', 'is_active', 'purchased_at']
 
     search_fields = ('owner__email', 'asset__name',)
     list_filter = ('purchased_at', 'is_active',)
     ordering = ('purchased_price', 'purchased_quantity',)
-    readonly_fields = ['purchased_at']
+    readonly_fields = ['Profit_and_loss', 'purchased_at']
     fieldsets = (
         (
             ('User Information'), {'fields': ('owner', 'asset',)}
@@ -53,6 +54,13 @@ class InvestmentAdmin(admin.ModelAdmin):
             ('Purchase Date and Status'), {'fields': ('purchased_at', 'is_active',)}
         )
     )
+
+    def profit_and_loss(self, instance):
+        self.total_investment = instance.purchased_price * instance.purchased_quantity
+        print(self.total_investment)
+        self.market_price = instance.purchased_quantity * instance.asset.price
+        print(self.market_price)
+        return self.market_price - self.total_investment
 
 
 @admin.register(InvestmentOrders)

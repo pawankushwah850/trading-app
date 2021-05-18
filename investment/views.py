@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import status
+from django_filters.rest_framework.backends import DjangoFilterBackend
 from ExtraServices.Pagination import *
 from ExtraServices.custom_permission import *
 
@@ -75,6 +76,8 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
 
 class MarketListingViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated, OwnerReadWriteOnly,)
+    #todo filter_backends = [DjangoFilterBackend]
+    # filterset_fields = "we set later for filter"
 
     def get_serializer_context(self):
         context = super(MarketListingViewSet, self).get_serializer_context()

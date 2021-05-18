@@ -55,8 +55,8 @@ class Notification(models.Model):
 class ForgetPasswordToken(models.Model):
     user = models.ForeignKey('user.User', on_delete=models.CASCADE)
     expire_at = models.DateTimeField()
-    token = models.CharField(max_length=10)
+    token = models.CharField(max_length=20)
 
     @property
     def is_expired(self):
-        return self.expire_at >= timezone.now()
+        return not bool(self.expire_at >= timezone.now())
