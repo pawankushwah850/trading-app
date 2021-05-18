@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from user.models import User, Referral, ForgetPasswordToken
+from user.models import *
 from investment.serializers import *
 
 
@@ -34,6 +34,7 @@ class SignupSerializers(serializers.ModelSerializer):
             Referral.objects.create(referred_by=referred_by,
                                     referred_to=user)
         return user
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,3 +90,11 @@ class ResetPasswordSerializer(serializers.Serializer):
                 return token
         except ForgetPasswordToken.DoesNotExist:
             raise serializers.ValidationError('Invalid not Token.')
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='owner.email')
+
+    class Meta:
+        model = Notification
+        fields = ('user', 'category', 'message', 'created_at', 'is_ack',)

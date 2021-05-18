@@ -8,6 +8,7 @@ router.register(r'^users', views.UserViewSet, basename='users')
 router.register(r'^users/forgot_password', views.UserViewSet, basename='forgot_password')
 router.register(r'^users/reset_password', views.UserViewSet, basename='reset_password')
 router.register(r'^profile', views.ProfileViewset, basename='users-profile')
+router.register(r'^notification', views.NotificationViewset, basename='notification')
 
 
 urlpatterns = [

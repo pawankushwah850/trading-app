@@ -45,11 +45,10 @@ class UserViewSet(ModelViewSet):
             try:
                 user = User.objects.get(email__iexact=request.data.get('email'))
                 ForgetPasswordToken.objects.all().delete()
+                token_expiry = timezone.now() + timedelta(days=1)
                 token = ForgetPasswordToken.objects.create(user=user, token=str(token_hex(5)),
-                                                           expire_at=timezone.now() + timedelta(days=3))
-                print(token)
-                print(token.token)
-                return Response({'token': token.token}, status=status.HTTP_200_OK)
+                                                           expire_at=token_expiry)
+                return Response({'token': token.token, 'expiry date': token_expiry}, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
         else:
@@ -115,3 +114,17 @@ class ProfileViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericView
         return self.update(request, *args, **kwargs)
 
     # todo verified by custom_admin : User can see their profile, their confusion portfolio and listings
+
+
+class NotificationViewset(ModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        if self.action in ['list', 'partial_update']:
+            return Notification.objects.filter(user=self.request.user)
+        return serializers.ValidationError("methods not allowed")
+
+    def update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)

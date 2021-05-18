@@ -54,7 +54,7 @@ class Investment(models.Model):
 
         self.purchased_quantity += quantity
         self.purchased_price = total_investment_made / total_quantity_purchased
-        self.Profit_and_loss = self.profit_and_loss
+        # self.Profit_and_loss = self.total_investment - self.total_value
         self.save()
         InvestmentOrders.objects.create(asset=self.asset, price=purchased_price,
                                         owner=self.owner, is_completed=True,

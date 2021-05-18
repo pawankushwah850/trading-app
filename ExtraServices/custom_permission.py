@@ -10,7 +10,4 @@ class OwnerReadWriteOnly(BasePermission):
 class CanTrade(BasePermission):
 
     def has_object_permission(self, request, view, obj):
-
-        print(view)
-        print(obj)
         return True

@@ -37,8 +37,8 @@ IGNORE_FIELDS = ['id']
 @admin.register(Notification)
 class CustomNotificationAdmin(admin.ModelAdmin):
     list_display = sorted([f.name for f in Notification._meta.fields if (f.name not in IGNORE_FIELDS)])[::-1]
-    ordering = ('-created_at',)
-    readonly_fields = [f.name for f in Notification._meta.fields]
+    # ordering = ('created_at',)
+    readonly_fields = ('created_at',)
     list_filter = ('category',)
     search_fields = ('user__email',)
     fieldsets = (

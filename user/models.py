@@ -42,9 +42,13 @@ class Referral(models.Model):
 
 
 class Notification(models.Model):
+    NOTIFICATION_TYPE = [
+        ('general', 'general'), ('investment_type', 'investment type'),
+        ('post_listing_type', 'post listing type'), ('buy', 'buy'), ('sell', 'sell'),
+    ]
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    category = models.CharField(max_length=2, )  # todo choice field
+    category = models.CharField(max_length=20, choices=NOTIFICATION_TYPE, default='general')  # todo choice field
     is_ack = models.BooleanField(default=False)
     user = models.ForeignKey('user.User', on_delete=models.CASCADE)
 
