@@ -62,7 +62,7 @@ class Investment(models.Model):
 
     @transaction.atomic
     def remove(self, quantity, purchased_price):
-        # todo we are asuming for now purchased_quantity decrease by 1.
+        # todo we are assuming for now purchased_quantity decrease by 1.
 
         if (self.purchased_quantity <= 0):
             raise ValidationError("You cannot sell more investment...")
