@@ -11,7 +11,7 @@ from rest_framework import status
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from ExtraServices.Pagination import *
 from ExtraServices.custom_permission import *
-
+from ExtraServices.notify import Notify
 from django.db import transaction
 
 
@@ -61,6 +61,7 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
         investment, created = Investment.objects.get_or_create(owner=request.user, is_active=True,
                                                                asset=ser.validated_data['asset_id'])
         investment.add(ser.validated_data['asset_quantity'], asset.live_price)
+        Notify(message="Thanks for buying!..", category="investment_type", user=request.user)
         return Response(InvestmentSerializer(investment).data)
 
     @action(detail=False, methods=['post'])
@@ -71,12 +72,14 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
         investment, created = Investment.objects.get_or_create(owner=request.user, is_active=True,
                                                                asset=ser.validated_data['asset_id'])
         investment.remove(ser.validated_data['asset_quantity'], asset.live_price)
+        Notify(message="Thanks for selling!..", category="investment_type", user=request.user)
         return Response(InvestmentSerializer(investment).data)
 
 
 class MarketListingViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated, OwnerReadWriteOnly,)
-    #todo filter_backends = [DjangoFilterBackend]
+
+    # todo filter_backends = [DjangoFilterBackend]
     # filterset_fields = "we set later for filter"
 
     def get_serializer_context(self):
@@ -218,10 +221,12 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             request.data._mutable = False
 
             with transaction.atomic():
+                Notify(message=f"your asset is added in investment", category="buy",
+                       user=request.user)
                 response_buy = InvestmentViewSet.buy(self, request)
                 request.user = instance.postOwner
                 response_sell = InvestmentViewSet.sell(self, request)
-
+            Notify(message=f"your asset is sold", category="sell", user=request.user)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @action(methods=['POST'], detail=False)
@@ -292,10 +297,13 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             request.data._mutable = False
 
             with transaction.atomic():
+                Notify(message=f"your asset is sold", category="sell",
+                       user=request.user)
                 response_sell = InvestmentViewSet.sell(self, request)
                 request.user = instance.postOwner
                 response_buy = InvestmentViewSet.buy(self, request)
-
+            Notify(message=f"your asset is added in investment", category="buy",
+                   user=request.user)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 #todo  & socket fetching

@@ -1,8 +1,8 @@
 # consumers.py
 from django.contrib.auth import get_user_model
-from user.serializers import UserSerializer
-from investment.serializers import WalletSerializers, AssetsSerializer
-from investment.models import Wallet, Asset
+from user.serializers import *
+from investment.serializers import *
+from investment.models import *
 
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.mixins import (
@@ -54,3 +54,14 @@ class AssetConsumer(ListModelMixin,
     queryset = Asset.objects.all()
     serializer_class = AssetsSerializer
     permission_classes = (AllowAny,)
+
+
+# ws://localhost:8000/virtualcoin/ws/v1/notification
+class NotificationConsumer(ListModelMixin,
+                           PatchModelMixin,
+                           GenericAsyncAPIConsumer):
+    serializer_class = NotificationSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self, **kwargs):
+        return Notification.objects.filter(user=self.scope['user'], is_ack=False)

@@ -63,6 +63,13 @@
         </div>
     </div>
 </div>
+<div class="row">
+    <div class="col s12">
+        <ul id="notification">
+
+        </ul>
+    </div>
+</div>
 <!-- Compiled and minified JavaScript -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script>
@@ -76,14 +83,13 @@
     });
 </script>
 <script>
-
-    const fetchData = ()=> {
+    const fetchData = () => {
 
         const url = document.getElementById('url').value
 
-        if (url=="" || url==null){
+        if (url == "" || url == null) {
             alert('Please enter a url');
-            return ;
+            return;
         }
 
         const method = document.getElementById('method').value
@@ -97,10 +103,10 @@
                 response_code: JSON.parse(e.data).response_code,
                 action: JSON.parse(e.data).action,
                 request_id: JSON.parse(e.data).request_id,
-                url:url,
-                method:method,
-                pk:pk,
-                rest_data:JSON.stringify(rest_data),
+                url: url,
+                method: method,
+                pk: pk,
+                rest_data: JSON.stringify(rest_data),
             }
             console.table(StatusInfo);
             console.log(JSON.parse(e.data).data)
@@ -146,8 +152,33 @@
         }
 
     }
+</script>
+<script>
+    window.onload = function () {
+
+        const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTYyMTQ5Nzc4NiwianRpIjoiZjcyMDBlMjdlZWU3NDAyOGJjYjhkNjRhNzRmNDQ3OTYiLCJ1c2VyX2lkIjoxfQ.zz2PKhQixx4ptLvzMFj45pKCFueLXuZ9BFF5PgLmilA"
+
+        const invoke = setInterval(function () {
+            const Notify = new WebSocket('ws://localhost:8000/virtualcoin/ws/v1/notification?token=' + token)
+            console.log("new notification")
+
+            Notify.onopen = function (e) {
+                Notify.send(JSON.stringify({
+                    action: "list",
+                    request_id: new Date().getTime(),
+                }));
+            }
+            Notify.onmessage = function (e) {
+                console.log(JSON.parse(e.data).data)
+            }
+            Notify.onerror = (e) => {
+                console.log(e)
+            }
+             clearInterval(invoke)
+        }, 2000);
 
 
+    }
 </script>
 </body>
 </html>

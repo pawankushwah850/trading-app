@@ -12,6 +12,7 @@ from investment.serializers import *
 from investment.models import *
 from rest_framework import generics
 from ExtraServices.Pagination import CustomPaginationUser
+from ExtraServices.notify import Notify
 from secrets import token_hex
 
 
@@ -21,6 +22,7 @@ class UserRegister(mixins.CreateModelMixin, generics.GenericAPIView):
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):
+        Notify(message="Thanking you for signup!", category="general", user=self.request.user)
         return self.create(request, *args, **kwargs)
 
 
@@ -48,6 +50,7 @@ class UserViewSet(ModelViewSet):
                 token_expiry = timezone.now() + timedelta(days=1)
                 token = ForgetPasswordToken.objects.create(user=user, token=str(token_hex(5)),
                                                            expire_at=token_expiry)
+                Notify(message="Hey! we have received forget password request.", category="general", user=user)
                 return Response({'token': token.token, 'expiry date': token_expiry}, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
@@ -61,6 +64,7 @@ class UserViewSet(ModelViewSet):
         token = ser.validated_data['token']
         token.user.set_password(ser.validated_data['new_password'])
         token.user.save()
+        Notify(message="password reset successfully", category="general", user=token.user)
         return Response({"body": "password reset successfully"}, status=status.HTTP_200_OK)
 
 
