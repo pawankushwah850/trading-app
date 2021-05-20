@@ -34,13 +34,21 @@ class Asset(models.Model):
         # todo read from live stream probably
         return self.price
 
+    def clean(self):
+        try:
+            instance = Asset.objects.get(name=self.name, is_public=True)
+            instance.is_public = False
+            instance.save()
+        except Asset.DoesNotExist:
+            pass
+
 
 class Investment(models.Model):
     owner = models.ForeignKey('user.User', on_delete=models.CASCADE)
     asset = models.ForeignKey("investment.Asset", on_delete=models.RESTRICT)
     purchased_price = models.FloatField(default=0)  # todo do we need to average out the price on new buy or sell
     purchased_quantity = models.FloatField(default=0, validators=[PositiveQuantity])
-    Profit_and_loss = models.FloatField(blank=True, null=True)
+    Profit_and_loss = models.FloatField(blank=True, null=True)  # todo remove this fileld further
     purchased_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
@@ -165,3 +173,16 @@ class Trading(models.Model):
 
     class Meta:
         verbose_name_plural = "Trading"
+
+    @property
+    def total_investment(self):
+        return self.cash * self.quantity
+
+    @property
+    def total_value(self):
+        return self.quantity * self.postId.assets_to_trade.price
+
+    @property
+    def profit_and_loss(self):
+        trading_result = self.total_investment - self.total_value
+        return trading_result

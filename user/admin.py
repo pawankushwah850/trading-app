@@ -18,16 +18,17 @@ IGNORE_FIELDS = ['id']
 
 @admin.register(Referral)
 class CustomReferralAdmin(admin.ModelAdmin):
-    readonly_fields = list_display = sorted([f.name for f in Referral._meta.fields \
-                                             if (f.name not in IGNORE_FIELDS)])[::-1]
+    list_display = ['id', 'referred_by', 'referred_to', 'created_at']
+
+    list_editable = ['referred_by', 'referred_to']
     ordering = ('-created_at',)
     search_fields = ('referred_to__email', 'referred_by__email',)
-    list_filter = ('created_at',)
+
     fieldsets = (
         (('Refer Information'), {
             'fields': ('referred_to', 'referred_by',)
         }),
-        (('Creadted dates'), {'fields': ('created_at',)}),
+
     )
 
 

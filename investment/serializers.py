@@ -1,10 +1,6 @@
 from rest_framework import serializers
 from investment.models import *
-from django.contrib.auth import get_user_model
-from rest_framework.response import Response
-
-
-# Trade
+from user.models import User
 
 
 class WalletSerializers(serializers.ModelSerializer):
@@ -99,13 +95,8 @@ class TradingSerializerRead(serializers.ModelSerializer):
         fields = ('pk', 'TradeOwner', 'quantity', 'cash', 'postId', 'tradingDate',)
 
 
-class TradingSerializerWrite(serializers.ModelSerializer):
-    class Meta:
-        model = Trading
-        fields = ('pk', 'quantity', 'cash', 'postId', 'tradingDate',)
-
-
 class TradingSerializerBuySell(serializers.Serializer):
     postId = serializers.PrimaryKeyRelatedField(queryset=MarketListing.objects.all(), required=True)
+    TradeOwner = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     cash = serializers.FloatField(required=False)
     quantity = serializers.FloatField(required=False)

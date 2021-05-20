@@ -1,3 +1,4 @@
+import datetime
 from rest_framework.viewsets import ModelViewSet
 from .models import *
 from user.models import *
@@ -20,12 +21,12 @@ class WalletViewSet(mixins.ListModelMixin, GenericViewSet):
     pagination_class = CustomPaginationInvestment
 
     def get_queryset(self):
+        print(self.request.build_absolute_uri())
         wallet, created = Wallet.objects.get_or_create(owner=self.request.user)
         return Wallet.objects.filter(id=wallet.id)
 
 
 class AssetsViewSet(ModelViewSet):
-    queryset = Asset.objects.all()
     serializer_class = AssetsSerializer
     pagination_class = CustomPaginationInvestment
 
@@ -35,6 +36,9 @@ class AssetsViewSet(ModelViewSet):
         else:
             permission_classes = [IsAdminUser]
         return [permission() for permission in permission_classes]
+
+    def get_queryset(self):
+        return Asset.objects.filter(is_public=True)
 
 
 class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
@@ -54,7 +58,6 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
 
     @action(detail=False, methods=['post'])
     def buy(self, request):
-        print(request)
         ser = InvestmentBuySellSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         asset = ser.validated_data['asset_id']
@@ -153,15 +156,14 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         return context
 
     def get_queryset(self):
-        if self.request.method == "GET":
+        if self.action in ['list', 'retrieve']:
             return Trading.objects.filter(TradeOwner=self.request.user).order_by('-pk')
-        return Trading.objects.all().order_by('-pk')
+        return serializers.ValidationError("method is not allowed")
 
     def get_serializer_class(self):
-        if self.request.method == "GET":
+        if self.action in ['list', 'retrieve']:
             return TradingSerializerRead
-        else:
-            return TradingSerializerWrite
+        return serializers.ValidationError("method is not allowed")
 
     @action(methods=['POST'], detail=False)
     def buy(self, request):
@@ -181,6 +183,8 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             return serializers.ValidationError(error)
         if instance.postOwner == request.user:
             raise serializers.ValidationError("you cannot trade on own post")
+        elif instance.expiry < datetime.datetime.now():
+            raise serializers.ValidationError("this post has been expired.")
         elif instance.post_type != "SELL":
             raise serializers.ValidationError("you can trade only sell type of post")
         elif instance.is_trade == True:
@@ -191,6 +195,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             return serializers.ValidationError("Please recharge your wallet balance")
         else:
             walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
+
             tradingInstance = Trading.objects.create(
                 postId=serializer.validated_data['postId'],
                 TradeOwner=request.user,
@@ -199,35 +204,34 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             )
 
             walletInstance.balance -= instance.total_price
-
             walletInstanceClient.balance += instance.total_price
-
+            instance.is_trade = True
             try:
                 with transaction.atomic():
+
                     tradingInstance.save()
-                    instance.is_trade = True
                     instance.save()
                     walletInstance.save()
                     walletInstanceClient.save()
+
+                    _mutable = request.data._mutable
+                    request.data._mutable = True
+                    request.data['asset_quantity'] = serializer.validated_data['quantity']
+                    request.data['asset_id'] = instance.assets_to_trade_id
+                    request.data._mutable = _mutable
+                    request.data._mutable = False
+
+                    Notify(message=f"your asset is added in investment", category="buy",
+                           user=request.user)
+
+                    InvestmentViewSet.buy(self, request)
+                    request.user = instance.postOwner
+                    InvestmentViewSet.sell(self, request)
+
+                    Notify(message=f"your asset is sold", category="sell", user=request.user)
+                    return Response(TradingSerializerBuySell(tradingInstance).data, status=status.HTTP_200_OK)
             except Exception as error:
                 raise serializers.ValidationError(error)
-
-            _mutable = request.data._mutable
-            request.data._mutable = True
-            request.data['asset_quantity'] = serializer.validated_data['quantity']
-            request.data['asset_id'] = instance.assets_to_trade_id
-
-            request.data._mutable = _mutable
-            request.data._mutable = False
-
-            with transaction.atomic():
-                Notify(message=f"your asset is added in investment", category="buy",
-                       user=request.user)
-                response_buy = InvestmentViewSet.buy(self, request)
-                request.user = instance.postOwner
-                response_sell = InvestmentViewSet.sell(self, request)
-            Notify(message=f"your asset is sold", category="sell", user=request.user)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @action(methods=['POST'], detail=False)
     def sell(self, request):
@@ -243,6 +247,8 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
         if instance.postOwner == request.user:
             raise serializers.ValidationError("you cannot trade on own post")
+        elif instance.expiry < datetime.datetime.now():
+            raise serializers.ValidationError("this post has been expired.")
         elif instance.post_type != "BUY":
             raise serializers.ValidationError("you can only trade only buy type post")
 
@@ -250,7 +256,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             raise serializers.ValidationError("Trading already done by other")
 
         investment_instance = Investment.objects.filter(owner=request.user, asset__id=instance.assets_to_trade_id)
-        # print(investment_instance.values('pk', 'asset__name', 'purchased_quantity'))
         number_of_investment_quantity = investment_instance.count()
 
         if number_of_investment_quantity < 1:
@@ -260,11 +265,8 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             raise serializers.ValidationError("sorry!,You not have asset quantity to sell")
 
         asset_price = instance.total_price
-        # trader
-        wallet_balance_instance = Wallet.objects.get(owner=request.user)
-
-        # postowner
-        walletInstanceClient = Wallet.objects.get(owner=instance.postOwner_id)
+        wallet_balance_instance = Wallet.objects.get(owner=request.user)  # trader
+        walletInstanceClient = Wallet.objects.get(owner=instance.postOwner_id)  # postowner
 
         if walletInstanceClient.balance < asset_price:
             raise serializers.ValidationError('Client not have enough balance to buy!')
@@ -275,37 +277,39 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
                 quantity=serializer.validated_data.get('quantity', 1),
                 cash=asset_price
             )
-
             wallet_balance_instance.balance += asset_price
             walletInstanceClient.balance -= asset_price
+            instance.is_trade = True
 
             try:
                 with transaction.atomic():
+
                     tradingInstance.save()
-                    instance.is_trade = True
                     instance.save()
                     wallet_balance_instance.save()
                     walletInstanceClient.save()
+
+                    _mutable = request.data._mutable
+                    request.data._mutable = True
+                    request.data['asset_quantity'] = serializer.validated_data.get('quantity', 1)
+                    request.data['asset_id'] = instance.assets_to_trade_id
+                    request.data._mutable = _mutable
+                    request.data._mutable = False
+
+                    Notify(message=f"your asset is sold", category="sell",
+                           user=request.user)
+
+                    InvestmentViewSet.sell(self, request)
+                    request.user = instance.postOwner
+                    InvestmentViewSet.buy(self, request)
+
+                    Notify(message=f"your asset is added in investment", category="buy",
+                           user=request.user)
+                    return Response(TradingSerializerBuySell(tradingInstance).data, status=status.HTTP_200_OK)
             except Exception as error:
                 raise serializers.ValidationError(error)
-
-            _mutable = request.data._mutable
-            request.data._mutable = True
-            request.data['asset_quantity'] = serializer.validated_data.get('quantity', 1)
-            request.data['asset_id'] = instance.assets_to_trade_id
-            request.data._mutable = _mutable
-            request.data._mutable = False
-
-            with transaction.atomic():
-                Notify(message=f"your asset is sold", category="sell",
-                       user=request.user)
-                response_sell = InvestmentViewSet.sell(self, request)
-                request.user = instance.postOwner
-                response_buy = InvestmentViewSet.buy(self, request)
-            Notify(message=f"your asset is added in investment", category="buy",
-                   user=request.user)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 #todo  & socket fetching
 # custom_admin side graph & payment gateway
 # code reuseable
+# prevent from deduct money from wallet in during trading.

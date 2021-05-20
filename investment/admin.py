@@ -7,7 +7,6 @@ from investment.models import *
 
 @admin.register(Wallet)
 class WalletAdmin(admin.ModelAdmin):
-    readonly_fields = ['owner']
     list_display = ['owner', 'balance']
     search_fields = ('owner__email',)
     list_filter = ('owner__email',)
@@ -112,7 +111,7 @@ class MarketListingAdmin(admin.ModelAdmin):
 
 @admin.register(Trading)
 class TradeAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'tradingDate']
-    search_fields = ('postId',)
+    list_display = ['pk', 'TradeOwner', 'tradingDate', 'cash', 'profit_and_loss']
+    search_fields = ('postId', 'TradeOwner',)
     readonly_fields = ['pk']
     ordering = ('tradingDate',)
