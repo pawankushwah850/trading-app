@@ -178,7 +178,8 @@ class Trading(models.Model):
 
     @property
     def total_investment(self):
-        return self.cash * self.quantity
+        #live price
+        return self.postId.assets_to_trade.live_price * self.quantity
 
     @property
     def total_value(self):

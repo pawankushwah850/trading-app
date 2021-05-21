@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from user.serializers import *
 from investment.serializers import *
 from investment.models import *
+from rest_framework import status
 
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework.mixins import (
@@ -47,13 +48,14 @@ class WalletConsumer(ListModelMixin,
 class AssetConsumer(ListModelMixin,
                     RetrieveModelMixin,
                     CreateModelMixin,
-                    UpdateModelMixin,
-                    PatchModelMixin,
                     DeleteModelMixin,
                     GenericAsyncAPIConsumer):
-    queryset = Asset.objects.all()
     serializer_class = AssetsSerializer
     permission_classes = (AllowAny,)
+
+    def get_queryset(self, **kwargs):
+        if kwargs['action'] in ['list']:
+            return Asset.objects.filter(is_public=True)
 
 
 # ws://localhost:8000/virtualcoin/ws/v1/notification

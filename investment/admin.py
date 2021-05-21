@@ -111,7 +111,7 @@ class MarketListingAdmin(admin.ModelAdmin):
 
 @admin.register(Trading)
 class TradeAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'TradeOwner', 'tradingDate', 'cash', 'profit_and_loss']
+    list_display = ['pk', 'TradeOwner', 'postId', 'tradingDate', 'cash', 'profit_and_loss']
     search_fields = ('postId', 'TradeOwner',)
     readonly_fields = ['pk']
     ordering = ('tradingDate',)

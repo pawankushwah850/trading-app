@@ -41,6 +41,7 @@ class AssetsViewSet(ModelViewSet):
         return Asset.objects.filter(is_public=True)
 
 
+
 class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
     serializer_class = InvestmentSerializer
     pagination_class = CustomPaginationInvestment
@@ -199,8 +200,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         except Exception as error:
             return serializers.ValidationError(error)
         if instance.postOwner == request.user:
-            print(instance.postOwner.email)
-            print(request.user.email)
             raise serializers.ValidationError("you cannot trade on own post")
         elif instance.expiry < datetime.datetime.now():
             raise serializers.ValidationError("this post has been expired.")
