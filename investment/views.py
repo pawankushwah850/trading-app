@@ -61,9 +61,18 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
         ser = InvestmentBuySellSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         asset = ser.validated_data['asset_id']
+        asset_quantity = ser.validated_data['asset_quantity']
         investment, created = Investment.objects.get_or_create(owner=request.user, is_active=True,
                                                                asset=ser.validated_data['asset_id'])
-        investment.add(ser.validated_data['asset_quantity'], asset.live_price)
+        walletinstance = Wallet.objects.get(owner=request.user)
+
+        if walletinstance.balance < (asset.live_price * asset_quantity):
+            raise serializers.ValidationError("your wallet balance is too low")
+
+        investment.add(asset_quantity, asset.live_price)
+        walletinstance.balance -= (asset.live_price * asset_quantity)
+        walletinstance.save()
+
         Notify(message="Thanks for buying!..", category="investment_type", user=request.user)
         return Response(InvestmentSerializer(investment).data)
 
@@ -72,11 +81,20 @@ class InvestmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Generi
         ser = InvestmentBuySellSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         asset = ser.validated_data['asset_id']
+        asset_quantity = ser.validated_data['asset_quantity']
         investment, created = Investment.objects.get_or_create(owner=request.user, is_active=True,
                                                                asset=ser.validated_data['asset_id'])
-        investment.remove(ser.validated_data['asset_quantity'], asset.live_price)
-        Notify(message="Thanks for selling!..", category="investment_type", user=request.user)
-        return Response(InvestmentSerializer(investment).data)
+        status = investment.remove(asset_quantity, asset.live_price)
+
+        if status.get('status'):
+            walletinstance = Wallet.objects.get(owner=request.user)
+            walletinstance.balance += (asset.live_price * asset_quantity)
+            walletinstance.save()
+
+            Notify(message="Thanks for selling!..", category="investment_type", user=request.user)
+            return Response(InvestmentSerializer(investment).data)
+
+        raise serializers.ValidationError(status.get('message'))
 
 
 class MarketListingViewSet(ModelViewSet):
@@ -173,7 +191,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
         postId = serializer.data.get('postId')
         cash = float(serializer.validated_data.get('cash'))
-        walletInstance = Wallet.objects.get(owner=self.request.user.id)
 
         try:
             instance = MarketListing.objects.get(pk=postId)
@@ -182,6 +199,8 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         except Exception as error:
             return serializers.ValidationError(error)
         if instance.postOwner == request.user:
+            print(instance.postOwner.email)
+            print(request.user.email)
             raise serializers.ValidationError("you cannot trade on own post")
         elif instance.expiry < datetime.datetime.now():
             raise serializers.ValidationError("this post has been expired.")
@@ -191,10 +210,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             return serializers.ValidationError("Trading is already done by others.")
         elif instance.total_price > cash:
             return serializers.ValidationError(f"Cash is too low then assets price. Excepted {instance.total_price}")
-        elif walletInstance.balance < instance.total_price:
-            return serializers.ValidationError("Please recharge your wallet balance")
         else:
-            walletInstanceClient = Wallet.objects.get(owner=instance.postOwner.id)
 
             tradingInstance = Trading.objects.create(
                 postId=serializer.validated_data['postId'],
@@ -203,16 +219,12 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
                 cash=serializer.validated_data['cash'],
             )
 
-            walletInstance.balance -= instance.total_price
-            walletInstanceClient.balance += instance.total_price
             instance.is_trade = True
             try:
                 with transaction.atomic():
 
                     tradingInstance.save()
                     instance.save()
-                    walletInstance.save()
-                    walletInstanceClient.save()
 
                     _mutable = request.data._mutable
                     request.data._mutable = True
@@ -255,17 +267,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
         elif instance.is_trade == True:
             raise serializers.ValidationError("Trading already done by other")
 
-        investment_instance = Investment.objects.filter(owner=request.user, asset__id=instance.assets_to_trade_id)
-        number_of_investment_quantity = investment_instance.count()
-
-        if number_of_investment_quantity < 1:
-            raise serializers.ValidationError("sorry!,You not have asset  to sell")
-
-        elif list(investment_instance.values('purchased_quantity'))[0].get('purchased_quantity') < 1:
-            raise serializers.ValidationError("sorry!,You not have asset quantity to sell")
-
         asset_price = instance.total_price
-        wallet_balance_instance = Wallet.objects.get(owner=request.user)  # trader
         walletInstanceClient = Wallet.objects.get(owner=instance.postOwner_id)  # postowner
 
         if walletInstanceClient.balance < asset_price:
@@ -277,8 +279,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
                 quantity=serializer.validated_data.get('quantity', 1),
                 cash=asset_price
             )
-            wallet_balance_instance.balance += asset_price
-            walletInstanceClient.balance -= asset_price
             instance.is_trade = True
 
             try:
@@ -286,8 +286,6 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
 
                     tradingInstance.save()
                     instance.save()
-                    wallet_balance_instance.save()
-                    walletInstanceClient.save()
 
                     _mutable = request.data._mutable
                     request.data._mutable = True
@@ -309,7 +307,7 @@ class TradingViewSet(ModelViewSet, InvestmentViewSet):
             except Exception as error:
                 raise serializers.ValidationError(error)
 
-#todo  & socket fetching
+# todo  & socket fetching
 # custom_admin side graph & payment gateway
 # code reuseable
-# prevent from deduct money from wallet in during trading.
+# prevent twice from deduct money from wallet in during trading.

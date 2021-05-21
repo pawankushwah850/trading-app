@@ -18,6 +18,8 @@ class AssetsSerializer(serializers.ModelSerializer):
 
 
 class InvestmentSerializer(serializers.ModelSerializer):
+    asset = AssetsSerializer(read_only=True)
+
     class Meta:
         model = Investment
         fields = ['asset', 'purchased_price', 'purchased_quantity', 'purchased_at', 'total_investment']

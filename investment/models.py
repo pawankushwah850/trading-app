@@ -72,21 +72,23 @@ class Investment(models.Model):
     def remove(self, quantity, purchased_price):
         # todo we are assuming for now purchased_quantity decrease by 1.
 
+        total_quantity_purchased = self.purchased_quantity - quantity
+
         if (self.purchased_quantity <= 0):
-            raise ValidationError("You cannot sell more investment...")
-        elif (self.purchased_quantity == 1):
+            return {'message': "sorry!,You not have asset  to sell", 'status': False}
+        elif self.purchased_quantity - quantity < 0:
+            return {'message': "quantity is too much high, then remaining quantity..", 'status': False}
+        elif (total_quantity_purchased == 0):
             total_quantity_purchased = self.purchased_quantity
-        else:
-            total_quantity_purchased = self.purchased_quantity - quantity
 
         total_investment_made = self.total_investment - (quantity * purchased_price)
-
         self.purchased_quantity -= quantity
         self.purchased_price = total_investment_made / total_quantity_purchased
         self.save()
         InvestmentOrders.objects.create(asset=self.asset, price=purchased_price,
                                         owner=self.owner, is_completed=True,
                                         investment=self)
+        return {'status': True}
 
     @property
     def total_investment(self):
