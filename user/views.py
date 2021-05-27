@@ -68,7 +68,7 @@ class UserViewSet(ModelViewSet):
         return Response({"body": "password reset successfully"}, status=status.HTTP_200_OK)
 
 
-class ProfileViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
+class ProfileViewset(ModelViewSet):
     User = get_user_model()
 
     serializer_class_user = UserSerializer
@@ -77,7 +77,9 @@ class ProfileViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericView
     permission_classes = (IsAuthenticated,)
 
     def get_queryset_user(self):
-        return User.objects.filter(pk=self.request.user.id)
+        if self.action in ['list', 'partial_update']:
+            return User.objects.filter(pk=self.request.user.id)
+        return serializers.ValidationError(f"{self.action} method is not allowed")
 
     def get_queryset_wallet(self):
         return Wallet.objects.filter(owner=self.request.user)

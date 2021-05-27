@@ -89,7 +89,7 @@ class ResetPasswordSerializer(serializers.Serializer):
             else:
                 return token
         except ForgetPasswordToken.DoesNotExist:
-            raise serializers.ValidationError('Invalid not Token.')
+            raise serializers.ValidationError('Invalid  Token.')
 
 
 class NotificationSerializer(serializers.ModelSerializer):
