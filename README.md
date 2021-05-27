@@ -1,4 +1,4 @@
-<h1 align="center">VirtualCoin</h1>
+<h1 align="center">Trading Application</h1>
 <pre>
 VirtualCoin is web application of trading or asset market. Here client buy or sell to assets. Assets means GOLD, SILVER, PLATINUM etc. 
 And Here we have to create rest api for that application.
